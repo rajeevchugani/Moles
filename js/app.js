@@ -303,8 +303,8 @@ const simplest=()=>S.coefs.reduce((a,b)=>gcd(a,b))===1;
 function renderModes(){
   $('modeSeg').innerHTML=MODES.map(([k,l])=>`<button data-act="mode" data-m="${k}" aria-pressed="${S.mode===k}">${l}</button>`).join('');
   $('modeNote').textContent=MODES.find(m=>m[0]===S.mode)[2];
-  $('tabs').innerHTML=[['lab','Reaction lab'],['tool','Mole practice'],['bal','Balancing practice']].map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('');
-  $('labView').hidden=S.tab!=='lab';$('toolView').hidden=S.tab!=='tool';$('balView').hidden=S.tab!=='bal';
+  $('tabs').innerHTML=[['lab','Reaction lab'],['tool','Mole practice'],['bal','Balancing practice'],['yield','% yield practice']].map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('');
+  $('labView').hidden=S.tab!=='lab';$('toolView').hidden=S.tab!=='tool';$('balView').hidden=S.tab!=='bal';$('yView').hidden=S.tab!=='yield';
 }
 const STEPS=['Reaction','Formulae','Balance','Experiment','Calculate'];
 function renderRail(){
@@ -342,7 +342,7 @@ function renderStage(){
 }
 function renderAll(){
   renderModes();
-  if(S.tab==='lab'){renderRail();renderEq();renderStage();}else if(S.tab==='tool')renderTool();else renderBal();
+  if(S.tab==='lab'){renderRail();renderEq();renderStage();}else if(S.tab==='tool')renderTool();else if(S.tab==='bal')renderBal();else renderYield();
 }
 function go(n){S.step=n;renderRail();renderEq();renderStage();$('rail').scrollIntoView({block:'start',behavior:'smooth'});}
 
@@ -464,7 +464,7 @@ function clearCalc(){
   Object.keys(S.vals).forEach(k=>{if(k[0]==='c')delete S.vals[k];});
   Object.keys(S.checked).forEach(k=>{if(k[0]==='c')delete S.checked[k];});
   Object.keys(S.shown).forEach(k=>{if(k[0]==='c')delete S.shown[k];});
-  S.run=null;S.reveal=0;const o=$('runout');if(o)o.innerHTML='';
+  S.run=null;S.yld=null;S.reveal=0;const o=$('runout');if(o)o.innerHTML='';
 }
 const canTit=()=>S.cat==='neutralisation'&&S.R.valid&&S.R.R[0].form==='aq'&&S.R.R[1].form==='aq';
 
@@ -658,7 +658,7 @@ function stage5(){
   const intro={worked:'Read down the columns. Each step has its working and the reason beside it.',guided:'Each row unlocks when the row above is right. Answers within 2% count, so round sensibly.',standard:'Fill in the blanks. Check a row when you are ready, or check everything at the end.',challenge:'Choose the equation, then work out every blank. Press Check all when you are finished.'}[m];
   $('stage').innerHTML=`<header><h2>Step 5 · Work it out under the equation</h2><p>${intro}</p></header>
   <div class="grid"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
-  ${wbtn}${gbtn}${(m==='worked'&&S.reveal+1>=total)?summary:'<div id="final"></div>'}
+  ${wbtn}${gbtn}${(m==='worked'&&S.reveal+1>=total)?summary:'<div id="final"></div>'}${yieldHTML(c)}
   ${S.run&&!S.run.c.bad?`<details open><summary>Bench results from Step 4</summary><div style="margin-top:10px">${runHTML()}</div></details>`:''}${navHTML()}`;
   paint();
 }
@@ -797,6 +797,73 @@ function renderBal(){
   <div class="nav"><span class="score">${B.ok} balanced correctly out of ${B.n} checks</span><span><button class="btn pri" data-act="bnew">New equation</button></span></div></section>`;
 }
 
+/* ---------- percentage yield in step 5 ---------- */
+function yieldHTML(c){
+  const R=S.R,key=JSON.stringify(S.A)+R.coefs.join(),m=S.mode;
+  if(!S.yld||S.yld.key!==key){
+    let j=R.P.findIndex(s=>s.form==='solid');if(j<0)j=R.P.findIndex(s=>s.form==='gas');if(j<0)j=R.P.findIndex(s=>s.form==='liquid');if(j<0)j=0;
+    const th=c.pAmt[j],pct=rnd([48,55,62,68,74,80,86,92]),actual=parseFloat((th*pct/100).toPrecision(3));
+    S.yld={key,j,th,actual,pct:actual/th*100};
+  }
+  const y=S.yld,s=R.P[y.j],u=s.form==='gas'?'dm³':'g';
+  let mid,hint='';
+  if(m==='worked'){mid=`<span class="given">${fmt(y.actual)} ÷ ${fmt(y.th)} × 100 = ${fmt(y.pct)} %</span>`;hint='Percentage yield = actual yield ÷ theoretical yield × 100.';}
+  else{
+    mid=inp('c_y1',y.pct,{label:'Percentage yield'})+' <span class="hint">%</span>';
+    if(m==='guided')hint='Percentage yield = actual yield ÷ theoretical yield × 100. Both amounts must be in the same unit.';
+    else if(m==='standard')hint=S.hintOpen.ry?'Percentage yield = actual yield ÷ theoretical yield × 100.':'<button class="btn sm" data-act="hint" data-id="ry">Hint</button>';
+  }
+  const btn=m==='worked'?'':`<div class="chips">${m!=='guided'?'<button class="btn teal" data-act="check" data-p="c_y">Check</button>':''}<button class="btn" data-act="showall" data-p="c_y">Show answer</button></div>`;
+  return `<div class="card" style="margin-top:4px"><h3>Percentage yield</h3>
+  <p>The ${fx(s.f)} you worked out above is the <b>theoretical yield</b>: ${fmt(y.th)} ${u}. In the experiment only <b>${fmt(y.actual)} ${u}</b> was collected. This is the <b>actual yield</b>. It is lower because some product is lost in transfers, in side reactions, or because the reaction does not go to completion.</p>
+  <div class="frow"><div><b>Percentage yield</b></div><div>${mid}</div><div class="hint">${hint}</div></div>${btn}</div>`;
+}
+
+/* ---------- percentage yield practice ---------- */
+const Y={kind:'simple',q:null,vals:{},checked:false,shown:false,hint:false,ok:0,n:0,done:false};
+function newY(){
+  const pcts=[40,45,50,55,60,65,70,75,80,85,90,95];
+  if(Y.kind==='simple'){
+    const theo=rnd([2.5,4,5,8,10,12.5,20,25,40,50]),pct=rnd(pcts),act=Math.round(theo*pct)/100,v=Math.floor(Math.random()*3);
+    const pp=act/theo*100;
+    Y.q=[{t:`A reaction should give ${fmt(theo)} g of product (the theoretical yield). Only ${fmt(act)} g is collected. What is the percentage yield?`,b:[{l:'Percentage yield',a:pp,u:'%'}],w:`% yield = actual ÷ theoretical × 100 = ${fmt(act)} ÷ ${fmt(theo)} × 100 = ${fmt(pp)} %`},
+         {t:`The theoretical yield of a reaction is ${fmt(theo)} g. The percentage yield is ${pct}%. What mass of product is actually collected?`,b:[{l:'Actual yield',a:theo*pct/100,u:'g'}],w:`actual = theoretical × % yield ÷ 100 = ${fmt(theo)} × ${pct} ÷ 100 = ${fmt(theo*pct/100)} g`},
+         {t:`A student collects ${fmt(act)} g of product. The percentage yield is ${pct}%. What is the theoretical yield?`,b:[{l:'Theoretical yield',a:act/pct*100,u:'g'}],w:`theoretical = actual ÷ % yield × 100 = ${fmt(act)} ÷ ${pct} × 100 = ${fmt(act/pct*100)} g`}][v];
+  }else{
+    for(let k=0;k<300;k++){
+      const cat=rnd(Object.keys(CATS)),R=build(cat,randPick(cat));
+      if(!R.valid||!(R.R[0].form==='solid'||R.R[0].form==='liquid'))continue;
+      const js=R.P.map((s,j)=>j).filter(j=>R.P[j].form!=='aq');if(!js.length)continue;
+      const j=rnd(js),r0=R.R[0],P=R.P[j],M=mr(r0.f),n=rnd([0.05,0.1,0.2,0.25,0.5]),mass=Math.round(n*M*10)/10;
+      if(mass<0.5||mass>60)continue;
+      const nr=R.R.length,nR=mass/M,nP=nR*R.coefs[nr+j]/R.coefs[0],theo=amtOf(P,nP),pct=rnd(pcts),act=parseFloat((theo*pct/100).toPrecision(3)),pp=act/theo*100;
+      const u=P.form==='gas'?'dm³':'g';
+      const eq=R.R.map((s,i)=>(R.coefs[i]>1?R.coefs[i]+' ':'')+fx(s.f)).join(' + ')+' → '+R.P.map((s,jj)=>(R.coefs[nr+jj]>1?R.coefs[nr+jj]+' ':'')+fx(s.f)).join(' + ');
+      const full=[{l:`Moles of ${fx(r0.f)}`,a:nR,u:'mol',w:`n = m ÷ Mr = ${fmt(mass)} ÷ ${fmt(M)} = ${fmt(nR)} mol`},{l:`Moles of ${fx(P.f)} (theoretical)`,a:nP,u:'mol',w:`Use the ratio ${R.coefs[0]} : ${R.coefs[nr+j]}. n = ${fmt(nR)} × ${R.coefs[nr+j]} ÷ ${R.coefs[0]} = ${fmt(nP)} mol`},{l:'Theoretical yield',a:theo,u,w:P.form==='gas'?`V = n × 24 = ${fmt(nP)} × 24 = ${fmt(theo)} dm³`:`m = n × Mr = ${fmt(nP)} × ${fmt(mr(P.f))} = ${fmt(theo)} g`},{l:'Percentage yield',a:pp,u:'%',w:`% yield = ${fmt(act)} ÷ ${fmt(theo)} × 100 = ${fmt(pp)} %`}];
+      Y.q={eq,t:`${mass} g of ${r0.name} (${fx(r0.f)}) reacts completely. Any other reactant is in excess. The experiment collects ${fmt(act)} ${u} of ${P.name} (${fx(P.f)}). Calculate the theoretical yield and the percentage yield.`,b:S.mode==='challenge'?full.slice(2):full};
+      break;
+    }
+  }
+  Y.vals={};Y.checked=false;Y.shown=false;Y.hint=false;Y.done=false;
+}
+const yRight=(i)=>{const v=Y.vals[i];if(v===undefined||v==='')return null;const x=parseFloat(String(v).replace(',','.')),a=Y.q.b[i].a;return !isNaN(x)&&Math.abs(x-a)<=Math.abs(a)*0.02+1e-9;};
+function renderYield(){
+  if(!Y.q)newY();
+  const m=S.mode,q=Y.q,w=m==='worked',rows=q.b.map((b,i)=>{
+    const st=Y.shown||w?'shown':(Y.checked||m==='guided')&&yRight(i)!==null?(yRight(i)?'ok':'bad'):'';
+    const val=Y.shown||w?fmt(b.a):(Y.vals[i]!==undefined?Y.vals[i]:'');
+    return `<div class="frow"><div><b>${b.l}</b></div><div><input class="blank ${st}" data-yin="${i}" type="text" inputmode="decimal" autocomplete="off" value="${esc(val)}" aria-label="${esc(b.l.replace(/<[^>]*>/g,''))}"${w?' disabled':''}> <span class="hint">${b.u}</span></div><div class="hint">${(w||Y.shown)&&b.w?b.w:''}</div></div>`;
+  }).join('');
+  const formula=(w||m==='guided'||Y.hint)?`<div class="callout"><span class="tri"><span>% yield = actual yield ÷ theoretical yield × 100</span><span>actual = theoretical × % yield ÷ 100</span><span>theoretical = actual ÷ % yield × 100</span></span></div>`:'';
+  const simpleW=(w||Y.shown)&&Y.kind==='simple'?`<div class="callout"><b>Working.</b> ${q.w}</div>`:'';
+  $('yView').innerHTML=`<section class="stage"><header><h2>Percentage yield practice</h2><p>The theoretical yield is the most product the equation allows. The actual yield is what you really collect. Percentage yield compares them. Answers within 2% are accepted.</p></header>
+  <div class="chips" role="group" aria-label="Question type"><button class="chip" data-act="ykind" data-k="simple" aria-pressed="${Y.kind==='simple'}">Quick calculations</button><button class="chip" data-act="ykind" data-k="eq" aria-pressed="${Y.kind==='eq'}">With an equation</button></div>
+  <div class="q">${q.eq?`<div class="eq chem">${q.eq}</div>`:''}<div class="text">${q.t}</div>${formula}<div class="rows">${rows}</div>${simpleW}
+   <div class="chips">${w?'':'<button class="btn teal" data-act="ycheck">Check</button>'}${m==='standard'&&!Y.hint&&!w?'<button class="btn" data-act="yhint">Hint</button>':''}${w?'':'<button class="btn" data-act="yshow">Show working</button>'}<button class="btn pri" data-act="ynew">New question</button></div>
+   <div id="yres"></div></div>
+  <div class="score">${Y.ok} correct out of ${Y.n} checks</div></section>`;
+}
+
 /* ---------- events ---------- */
 function applyShow(ids){
   ids.forEach(id=>{
@@ -844,6 +911,15 @@ document.addEventListener('click',e=>{
   else if(a==='bcheck'){B.checked=true;B.n++;if(balInfoB().every(x=>x.ok)&&B.co.reduce(gcd)===1&&!B.done&&!B.shown){B.ok++;B.done=true;}renderBal();}
   else if(a==='bhint'){B.hint=true;renderBal();}
   else if(a==='bshow'){B.co=B.R.coefs.slice();B.shown=true;renderBal();}
+  else if(a==='ykind'){Y.kind=d.k;Y.ok=0;Y.n=0;newY();renderYield();}
+  else if(a==='ynew'){newY();renderYield();}
+  else if(a==='yhint'){Y.hint=true;renderYield();}
+  else if(a==='yshow'){Y.shown=true;renderYield();}
+  else if(a==='ycheck'){
+    const all=Y.q.b.every((b,i)=>yRight(i)===true);
+    if(Y.q.b.some((b,i)=>yRight(i)===null)){Y.checked=true;renderYield();$('yres').innerHTML='<div class="callout warn">Fill in every blank first.</div>';}
+    else{Y.checked=true;Y.n++;if(all&&!Y.done&&!Y.shown){Y.ok++;Y.done=true;}renderYield();$('yres').innerHTML=all?'<div class="callout good"><b>Correct.</b></div>':'<div class="callout bad">Not quite. Check each step, your units and your rounding.</div>';}
+  }
   else if(a==='tkind'){T.kind=d.k;newQ();T.ok=0;T.n=0;renderTool();}
   else if(a==='tnew'){newQ();renderTool();}
   else if(a==='tcheck'){toolCheck();$('tres').innerHTML=toolRes();const sc=document.querySelector('#toolView .score');if(sc)sc.textContent=`${T.ok} correct out of ${T.n} attempts`;}
@@ -860,6 +936,7 @@ document.addEventListener('input',e=>{
   if(el.dataset.f!==undefined&&el.tagName==='INPUT')onField(el);
   else if(el.dataset.amt!==undefined){const i=+el.dataset.amt,v=parseFloat(el.value);if(!isNaN(v)&&v>=0){S.A[i][el.dataset.k]=v;$('vis'+i).innerHTML=visHTML(i);clearCalc();}}
   else if(el.dataset.tin!==undefined){T.val=el.value;}
+  else if(el.dataset.yin!==undefined){Y.vals[+el.dataset.yin]=el.value;Y.checked=false;el.classList.remove('ok','bad');}
 });
 document.addEventListener('change',e=>{
   const el=e.target;
