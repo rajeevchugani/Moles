@@ -1046,7 +1046,7 @@ document.addEventListener('keydown',e=>{
     box.querySelectorAll('[data-sz]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sz===size));
     store.set('moleLabPTSize',size);
   }
-  function applyFade(){box.classList.toggle('fade',fade);$('ptFade').setAttribute('aria-pressed',fade);$('ptFade').textContent=fade?'Fade: on':'Fade';}
+  function applyFade(){box.classList.toggle('fade',fade);$('ptFade').setAttribute('aria-pressed',fade);$('ptFade').textContent=fade?'Fade: on, tap to restore':'Fade';}
   const inList=(z,a)=>a.includes(z);
   function cat(z){
     if(inList(z,[3,11,19,37,55,87]))return ['k-alk','Group 1 metal (alkali metal)'];

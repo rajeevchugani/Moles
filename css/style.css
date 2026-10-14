@@ -159,10 +159,9 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .ptp.sz-s .pt button.el .s{font-size:12px}.ptp.sz-s .pt button.el .z{font-size:7px}.ptp.sz-s .pt button.el .a{font-size:8px}
 .ptp.sz-m .pt button.el{min-height:40px}.ptp.sz-m .pt button.el .s{font-size:13px}
 .ptp.sz-s .body{max-height:min(60vh,420px)}
-.ptp.fade{opacity:.45}
-.ptp.fade .body{pointer-events:none}
-.ptp.fade:has(.bar:hover){opacity:.95}
-.ptp.fade .ptd,.ptp.fade .tools{opacity:1}
+.ptp.fade{background:transparent;border-color:transparent;box-shadow:none}
+.ptp.fade .body{opacity:.4;pointer-events:none}
+.ptp .bar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .ptp .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ptp .tools input{max-width:220px}
 .ptp .tools .chip{padding:5px 12px}
