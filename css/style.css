@@ -128,14 +128,15 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .calc .bar:active{cursor:grabbing}
 .calc .bar span{flex:1}
 .calc .bar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:3px 8px;font-size:12px;font-weight:600}
-.calc .body{padding:10px;display:flex;flex-direction:column;gap:8px}
+.calc .body{padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 60px);overflow:auto}
+.calc .body>*{flex-shrink:0}
 .calc.min .body{display:none}
-.calc .hist{min-height:18px;text-align:right;font-family:var(--font-m);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calc .hist{min-height:16px;text-align:right;font-family:var(--font-m);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .calc input{font-family:var(--font-m);font-size:20px;text-align:right;padding:8px 10px}
 .calc .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .calc .keys button{border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:10px 0;font-family:var(--font-m);font-size:17px;font-weight:500}
 .calc .keys button.op{background:var(--teal-soft);color:var(--teal)}
-.calc .keys button.eq{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.calc .keys button.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .calc .keys button.clr{background:var(--bad-soft);color:var(--bad)}
 .calc .keys .sci{display:none}
 .calc.sci .keys .sci{display:block}
@@ -149,7 +150,10 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .ptp .bar:active{cursor:grabbing}
 .ptp .bar span{flex:1}
 .ptp .bar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:3px 8px;font-size:12px;font-weight:600}
-.ptp .body{padding:10px;display:flex;flex-direction:column;gap:8px;max-height:min(78vh,640px);overflow:auto}
+.ptp .body{padding:10px;display:flex;flex-direction:column;gap:8px;max-height:min(calc(100vh - 150px),760px);overflow:auto}
+.ptp .body>*{flex-shrink:0;min-width:0}
+.ptp .ptd{overflow-wrap:anywhere}
+.ptp .tools{min-width:0}
 .ptp.min .body{max-height:none;overflow:visible}
 .ptp.min #ptView,.ptp.min .leg,.ptp.min .pnote,.ptp.min .tchips,.ptp.min #ptFade{display:none}
 .ptp.sz-s{width:min(540px,calc(100vw - 16px))}.ptp.sz-m{width:min(690px,calc(100vw - 16px))}
@@ -159,6 +163,25 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .ptp.sz-s .pt button.el .s{font-size:12px}.ptp.sz-s .pt button.el .z{font-size:7px}.ptp.sz-s .pt button.el .a{font-size:8px}
 .ptp.sz-m .pt button.el{min-height:40px}.ptp.sz-m .pt button.el .s{font-size:13px}
 .ptp.sz-s .body{max-height:min(60vh,420px)}
+.pt button.el.pick{outline:3px solid var(--teal);outline-offset:0;position:relative;z-index:1}
+.pt button.el .cnt{position:absolute;top:-6px;right:-2px;background:var(--teal);color:var(--surface);font-family:var(--font-m);font-size:9px;border-radius:8px;padding:0 4px;line-height:14px}
+.ptp .picks .pk{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 4px 2px 10px;font-family:var(--font-m);font-size:12px}
+.ptp .picks .pk button{border:1px solid var(--line);background:var(--surface2);border-radius:50%;width:22px;height:22px;padding:0;font-size:13px;line-height:1;font-weight:700}
+.ptp .picks .pk button.x{color:var(--bad)}
+.ptp .mrbox{display:flex;flex-direction:column;gap:6px;padding:8px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--line)}
+.ptp .mrbox summary{font-size:13px;font-weight:600;cursor:pointer}
+.ptp .mrbox[open] summary{margin-bottom:4px}
+.ptp .mrbox label{font-size:12px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.ptp .mrbox input{font-family:var(--font-m);font-size:15px;padding:6px 10px}
+.ptp .mrbox table{font-size:12px;font-family:var(--font-m);width:auto}
+.ptp .mrbox td,.ptp .mrbox th{padding:2px 12px 2px 0;text-align:left;border:0;background:none}
+.ptp .mrbox .res{font-size:15px}
+.ptp .picks{display:flex;flex-direction:column;gap:6px;padding:8px 12px;border-radius:10px;background:var(--teal-soft);border:1px solid var(--teal);font-size:13px}
+.ptp .picks[hidden]{display:none}
+.ptp .picks .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ptp .picks .chip{padding:3px 10px;font-size:12px;font-family:var(--font-m)}
+.ptp .picks .chip b{font-family:var(--font-d)}
+.ptp .picks .tot{font-family:var(--font-m);color:var(--muted);font-size:12px}
 .ptp.fade{background:transparent;border-color:transparent;box-shadow:none}
 .ptp.fade .body{opacity:.4;pointer-events:none}
 .ptp .bar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -184,7 +207,7 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .k-nob{background:color-mix(in srgb,var(--teal) 42%,var(--surface))!important}
 .k-lan{background:color-mix(in srgb,var(--warn) 10%,var(--surface))!important}
 .k-act{background:color-mix(in srgb,var(--bad) 10%,var(--surface))!important}
-.ptd{font-size:14px;min-height:42px;padding:8px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--line)}
+.ptd{font-size:14px;min-height:42px;line-height:1.45;padding:8px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--line)}
 .ptd b{font-family:var(--font-d);font-size:18px}
 .leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted)}
 .leg i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:4px}

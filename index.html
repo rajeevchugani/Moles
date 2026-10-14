@@ -39,7 +39,7 @@
       <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="÷">÷</button>
       <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="×">×</button>
       <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="−">−</button>
-      <button data-k="0">0</button><button data-k=".">.</button><button class="eq" data-k="=">=</button><button class="op" data-k="+">+</button>
+      <button data-k="0">0</button><button data-k=".">.</button><button class="go" data-k="=">=</button><button class="op" data-k="+">+</button>
     </div>
   </div>
 </div>
@@ -47,8 +47,10 @@
 <div class="ptp" id="ptp" hidden role="dialog" aria-label="Periodic table">
   <div class="bar" id="ptBar"><span>Periodic table (IGCSE values)</span><button id="ptFade" aria-pressed="false" title="See-through: lets you click and type on the page behind the table. Press again to bring the table back.">Fade</button><button id="ptMin" aria-label="Switch between compact and full periodic table">Compact</button><button id="ptClose" aria-label="Close periodic table">Off</button></div>
   <div class="body">
-    <div class="tools"><input type="text" id="ptSearch" placeholder="Search symbol, name or number" autocomplete="off" aria-label="Search elements"><span class="tchips"><button class="chip" data-pv="table" aria-pressed="true">Table</button><button class="chip" data-pv="list" aria-pressed="false">List</button></span><span class="tchips" role="group" aria-label="Size"><button class="chip" data-sz="s" aria-pressed="false">Small</button><button class="chip" data-sz="m" aria-pressed="true">Medium</button><button class="chip" data-sz="l" aria-pressed="false">Large</button></span></div>
-    <div class="ptd" id="ptDetail" aria-live="polite">Hover over or tap an element to see its atomic number, symbol and relative atomic mass.</div>
+    <div class="tools"><input type="text" id="ptSearch" placeholder="Search symbol, name or number" autocomplete="off" aria-label="Search elements"><span class="tchips"><button class="chip" data-pv="table" aria-pressed="true">Table</button><button class="chip" data-pv="list" aria-pressed="false">List</button></span><span class="tchips" role="group" aria-label="Size"><button class="chip" data-sz="s" aria-pressed="false">Small</button><button class="chip" data-sz="m" aria-pressed="true">Medium</button><button class="chip" data-sz="l" aria-pressed="false">Large</button></span><span class="tchips"><button class="chip" id="ptMulti" aria-pressed="false" title="Turn on to tap several elements and build a short list">Select several</button></span></div>
+    <div class="ptd" id="ptDetail" aria-live="polite">Tap an element to pin its atomic number, symbol and relative atomic mass here. It stays until you choose another.</div>
+    <div class="picks" id="ptPicks" hidden></div>
+    <details class="mrbox" id="ptMr"><summary>Work out Mr from a typed formula</summary><label for="ptFormula">Type a formula<input type="text" id="ptFormula" placeholder="Type a formula, e.g. Ca(OH)2 or CuSO4.5H2O" autocomplete="off" autocapitalize="off" spellcheck="false"></label><div id="ptMrOut" aria-live="polite"></div></details>
     <div id="ptView" style="overflow-x:auto"></div>
     <div class="leg"><span><i class="k-alk"></i>Group 1 metals</span><span><i class="k-aea"></i>Group 2 metals</span><span><i class="k-trn"></i>Transition metals</span><span><i class="k-pt"></i>Other metals</span><span><i class="k-mtl"></i>Metalloids</span><span><i class="k-nm"></i>Non-metals</span><span><i class="k-hal"></i>Halogens</span><span><i class="k-nob"></i>Noble gases</span><span><i class="k-lan"></i>Lanthanoids</span><span><i class="k-act"></i>Actinoids</span></div>
     <p class="hint pnote" style="font-size:12px;color:var(--muted)">Tip: Small makes it take less room, Fade (in the title bar) makes the table see-through so you can click and type on the page behind it, and Compact (the Min button) leaves just a search box. Relative atomic masses are the rounded values used in IGCSE. For radioactive elements the value is the mass number of the most stable isotope.</p>

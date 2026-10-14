@@ -404,7 +404,7 @@ function atomsHTML(){
     else if(S.mode==='guided'||S.mode==='standard')msg=`<div class="callout warn">${bad.e} is not balanced yet: ${bad.l} on the left and ${bad.r} on the right. Change a coefficient, never a subscript.</div>`;
     else msg=`<div class="callout bad">Not balanced yet.</div>`;
   }
-  const tbl=vis?`<div class="grid"><table><thead><tr><th class="rl">Atoms of</th><th>Left</th><th>Right</th><th></th></tr></thead><tbody>${info.map(x=>`<tr><td class="rl"><b>${x.e}</b></td><td class="given">${x.l}</td><td class="given">${x.r}</td><td>${x.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table></div>`:'';
+  const tbl=vis?`<div class="grid"><table><thead><tr><th class="rl">Atoms of</th><th>Left</th><th>Right</th><th></th></tr></thead><tbody>${info.map(x=>`<tr><td class="rl"><b>${x.e}</b></td><td><span class="given">${x.l}</span></td><td><span class="given">${x.r}</span></td><td>${x.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table></div>`:'';
   return tbl+msg;
 }
 function stage3(){
@@ -412,7 +412,7 @@ function stage3(){
   if(!R.valid){$('stage').innerHTML=`<header><h2>Step 3 · Balance</h2></header><div class="callout bad">${R.msg}</div>${navHTML(false)}`;return;}
   const sp=allSp(),nr=R.R.length,w=S.mode==='worked';
   if(w)S.coefs=R.coefs.slice();
-  const box=(s,i)=>`<div class="card" style="align-items:center;flex:0 0 auto"><div class="eq chem">${fx(s.f)}</div>${w?`<span class="big">${S.coefs[i]}</span>`:`<div class="step"><button data-act="coef" data-i="${i}" data-d="-1" aria-label="Decrease coefficient of ${s.name}">−</button><output id="co${i}">${S.coefs[i]}</output><button data-act="coef" data-i="${i}" data-d="1" aria-label="Increase coefficient of ${s.name}">+</button></div>`}</div>`;
+  const box=(s,i)=>`<div class="card" style="align-items:center;flex:0 0 auto"><div class="eq chem"><span>${fx(s.f)}</span></div>${w?`<span class="big">${S.coefs[i]}</span>`:`<div class="step"><button data-act="coef" data-i="${i}" data-d="-1" aria-label="Decrease coefficient of ${s.name}">−</button><output id="co${i}">${S.coefs[i]}</output><button data-act="coef" data-i="${i}" data-d="1" aria-label="Increase coefficient of ${s.name}">+</button></div>`}</div>`;
   const line=sp.map((s,i)=>(i===nr?'<span class="big" style="align-self:center">→</span>':i?'<span class="big plus" style="align-self:center">+</span>':'')+box(s,i)).join('');
   const method=w?`<div class="callout"><b>Method.</b> 1) Count the atoms of each element on both sides. 2) Pick an element that is out of balance, starting with one that appears in just one substance on each side. 3) Put a number in front of a formula to fix it. 4) Re-count everything, because that number changes other elements too. 5) Stop when every element matches in the smallest whole numbers.</div>`:'';
   const btns=w?'':`<div class="chips">${S.mode==='standard'?'<button class="btn" data-act="hint" data-id="atoms">Count the atoms</button>':''}${S.mode!=='guided'?'<button class="btn teal" data-act="checkbal">Check balance</button>':''}<button class="btn" data-act="solvebal">Show balanced equation</button></div>`;
@@ -450,7 +450,7 @@ function cardHTML(i){
   const unit=gas?'dm³':aq?'cm³':'g';
   const concs=[0.05,0.1,0.2,0.25,0.5,1,1.5,2,3];if(!concs.includes(a.c)&&aq)concs.push(a.c);concs.sort((x,y)=>x-y);
   const hold=aq?`<button class="btn sm teal" data-hold data-i="${i}" data-k="V" data-d="1" aria-label="Pour ${s.name}, hold to keep pouring">Pour (hold)</button>`:'';
-  return `<div class="card"><h3>${fx(s.f)} <span class="hint" style="font-weight:400">${s.name}</span></h3>
+  return `<div class="card"><h3><span>${fx(s.f)}</span> <span class="hint" style="font-weight:400">${s.name}</span></h3>
   <div id="vis${i}">${visHTML(i)}</div>
   ${aq?`<label class="f">Bottle label, concentration (mol/dm³)<select data-amt-c="${i}">${concs.map(c=>`<option value="${c}"${c===a.c?' selected':''}>${fmt(c)}</option>`).join('')}</select></label>`:''}
   <div class="btnrow">${hold}${steps.map(([d])=>`<button class="btn sm" data-act="adj" data-i="${i}" data-k="${key}" data-d="${d}">${d>0?'+':'−'}${Math.abs(d)}</button>`).join('')}<button class="btn sm" data-act="adj" data-i="${i}" data-k="${key}" data-d="-9999">Empty</button></div>
@@ -786,9 +786,9 @@ function renderBal(){
   if(bal&&simp&&(w||B.checked||B.shown||m==='guided'))fb=`<div class="callout good"><b>Balanced.</b> Every element matches on both sides in the simplest ratio.</div>`;
   else if(bal&&(w||B.checked||B.shown||m==='guided'))fb=`<div class="callout warn"><b>Balanced, but not simplest.</b> Divide every coefficient by the same number.</div>`;
   else if(!bal&&(B.checked||(m==='guided')))fb=m==='challenge'?`<div class="callout bad">Not balanced yet.</div>`:`<div class="callout warn">${bad.e} is not balanced: ${bad.l} on the left, ${bad.r} on the right. Change a coefficient, never a subscript.</div>`;
-  const box=(s,i)=>`<div class="card" style="align-items:center;flex:0 0 auto"><div class="eq chem">${fx(s.f)}</div>${w?`<span class="big">${B.co[i]}</span>`:`<div class="step"><button data-act="bco" data-i="${i}" data-d="-1" aria-label="Decrease coefficient of ${s.name}">−</button><output>${B.co[i]}</output><button data-act="bco" data-i="${i}" data-d="1" aria-label="Increase coefficient of ${s.name}">+</button></div>`}</div>`;
+  const box=(s,i)=>`<div class="card" style="align-items:center;flex:0 0 auto"><div class="eq chem"><span>${fx(s.f)}</span></div>${w?`<span class="big">${B.co[i]}</span>`:`<div class="step"><button data-act="bco" data-i="${i}" data-d="-1" aria-label="Decrease coefficient of ${s.name}">−</button><output>${B.co[i]}</output><button data-act="bco" data-i="${i}" data-d="1" aria-label="Increase coefficient of ${s.name}">+</button></div>`}</div>`;
   const line=sp.map((s,i)=>(i===nr?'<span class="big" style="align-self:center">→</span>':i?'<span class="big plus" style="align-self:center">+</span>':'')+box(s,i)).join('');
-  const tbl=vis?`<div class="grid"><table><thead><tr><th class="rl">Atoms of</th><th>Left</th><th>Right</th><th></th></tr></thead><tbody>${info.map(x=>`<tr><td class="rl"><b>${x.e}</b></td><td class="given">${x.l}</td><td class="given">${x.r}</td><td>${x.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table></div>`:'';
+  const tbl=vis?`<div class="grid"><table><thead><tr><th class="rl">Atoms of</th><th>Left</th><th>Right</th><th></th></tr></thead><tbody>${info.map(x=>`<tr><td class="rl"><b>${x.e}</b></td><td><span class="given">${x.l}</span></td><td><span class="given">${x.r}</span></td><td>${x.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table></div>`:'';
   const method=w?`<div class="callout"><b>Method.</b> Count the atoms of each element on both sides. Fix one element at a time by changing a coefficient, starting with an element that appears in only one substance on each side. Re-count after every change. Finish by checking the numbers are the smallest whole numbers.</div>`:'';
   const btns=w?'':`<div class="chips"><button class="btn teal" data-act="bcheck">Check</button>${m==='standard'&&!B.hint?'<button class="btn" data-act="bhint">Count the atoms</button>':''}<button class="btn" data-act="bshow">Show answer</button></div>`;
   $('balView').innerHTML=`<section class="stage"><header><h2>Balancing practice</h2><p>Set the coefficient in front of each formula so both sides have the same atoms. Use the type and level buttons to choose what you practise.</p></header>
@@ -856,11 +856,11 @@ function renderYield(){
     const val=Y.shown||w?fmt(b.a):(Y.vals[i]!==undefined?Y.vals[i]:'');
     return `<div class="frow"><div><b>${b.l}</b></div><div><input class="blank ${st}" data-yin="${i}" type="text" inputmode="decimal" autocomplete="off" value="${esc(val)}" aria-label="${esc(b.l.replace(/<[^>]*>/g,''))}"${w?' disabled':''}> <span class="hint">${b.u}</span></div><div class="hint">${(w||Y.shown)&&b.w?b.w:''}</div></div>`;
   }).join('');
-  const formula=(w||m==='guided'||Y.hint)?`<div class="callout"><span class="tri"><span>% yield = actual yield ÷ theoretical yield × 100</span><span>actual = theoretical × % yield ÷ 100</span><span>theoretical = actual ÷ % yield × 100</span></span></div>`:'';
+  const formula=(w||m==='guided'||Y.hint)?`<div class="callout"><span class="tri" style="display:flex;flex-direction:column;gap:3px"><span>% yield = actual yield ÷ theoretical yield × 100</span><span>actual = theoretical × % yield ÷ 100</span><span>theoretical = actual ÷ % yield × 100</span></span></div>`:'';
   const simpleW=(w||Y.shown)&&Y.kind==='simple'?`<div class="callout"><b>Working.</b> ${q.w}</div>`:'';
   $('yView').innerHTML=`<section class="stage"><header><h2>Percentage yield practice</h2><p>The theoretical yield is the most product the equation allows. The actual yield is what you really collect. Percentage yield compares them. Answers within 2% are accepted.</p></header>
   <div class="chips" role="group" aria-label="Question type"><button class="chip" data-act="ykind" data-k="simple" aria-pressed="${Y.kind==='simple'}">Quick calculations</button><button class="chip" data-act="ykind" data-k="eq" aria-pressed="${Y.kind==='eq'}">With an equation</button></div>
-  <div class="q">${q.eq?`<div class="eq chem">${q.eq}</div>`:''}<div class="text">${q.t}</div>${formula}<div class="rows">${rows}</div>${simpleW}
+  <div class="q">${q.eq?`<div class="eq chem"><span>${q.eq}</span></div>`:''}<div class="text">${q.t}</div>${formula}<div class="rows">${rows}</div>${simpleW}
    <div class="chips">${w?'':'<button class="btn teal" data-act="ycheck">Check</button>'}${m==='standard'&&!Y.hint&&!w?'<button class="btn" data-act="yhint">Hint</button>':''}${w?'':'<button class="btn" data-act="yshow">Show working</button>'}<button class="btn pri" data-act="ynew">New question</button></div>
    <div id="yres"></div></div>
   <div class="score">${Y.ok} correct out of ${Y.n} checks</div></section>`;
@@ -1015,7 +1015,7 @@ document.addEventListener('keydown',e=>{
     box.querySelectorAll('[data-cm]').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.cm==='sci')===sci));
     store.set('moleLabCalcType',sci?'sci':'basic');clamp();
   }
-  btn.addEventListener('click',()=>setOn(box.hidden));
+  btn.addEventListener('click',()=>{if(box.hidden&&window.innerWidth<700&&!$('ptp').hidden)$('ptClose').click();setOn(box.hidden);});
   $('calcClose').addEventListener('click',()=>setOn(false));
   $('calcMin').addEventListener('click',()=>{box.classList.toggle('min');$('calcMin').textContent=box.classList.contains('min')?'Open':'Min';clamp();});
   $('calcKeys').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b)key(b.dataset.k);});
@@ -1040,6 +1040,55 @@ document.addEventListener('keydown',e=>{
   const EL=`H,Hydrogen,1;He,Helium,4;Li,Lithium,7;Be,Beryllium,9;B,Boron,11;C,Carbon,12;N,Nitrogen,14;O,Oxygen,16;F,Fluorine,19;Ne,Neon,20;Na,Sodium,23;Mg,Magnesium,24;Al,Aluminium,27;Si,Silicon,28;P,Phosphorus,31;S,Sulfur,32;Cl,Chlorine,35.5;Ar,Argon,40;K,Potassium,39;Ca,Calcium,40;Sc,Scandium,45;Ti,Titanium,48;V,Vanadium,51;Cr,Chromium,52;Mn,Manganese,55;Fe,Iron,56;Co,Cobalt,59;Ni,Nickel,59;Cu,Copper,64;Zn,Zinc,65;Ga,Gallium,70;Ge,Germanium,73;As,Arsenic,75;Se,Selenium,79;Br,Bromine,80;Kr,Krypton,84;Rb,Rubidium,85;Sr,Strontium,88;Y,Yttrium,89;Zr,Zirconium,91;Nb,Niobium,93;Mo,Molybdenum,96;Tc,Technetium,98;Ru,Ruthenium,101;Rh,Rhodium,103;Pd,Palladium,106;Ag,Silver,108;Cd,Cadmium,112;In,Indium,115;Sn,Tin,119;Sb,Antimony,122;Te,Tellurium,128;I,Iodine,127;Xe,Xenon,131;Cs,Caesium,133;Ba,Barium,137;La,Lanthanum,139;Ce,Cerium,140;Pr,Praseodymium,141;Nd,Neodymium,144;Pm,Promethium,147;Sm,Samarium,150;Eu,Europium,152;Gd,Gadolinium,157;Tb,Terbium,159;Dy,Dysprosium,163;Ho,Holmium,165;Er,Erbium,167;Tm,Thulium,169;Yb,Ytterbium,173;Lu,Lutetium,175;Hf,Hafnium,178;Ta,Tantalum,181;W,Tungsten,184;Re,Rhenium,186;Os,Osmium,190;Ir,Iridium,192;Pt,Platinum,195;Au,Gold,197;Hg,Mercury,201;Tl,Thallium,204;Pb,Lead,207;Bi,Bismuth,209;Po,Polonium,209;At,Astatine,210;Rn,Radon,222;Fr,Francium,223;Ra,Radium,226;Ac,Actinium,227;Th,Thorium,232;Pa,Protactinium,231;U,Uranium,238;Np,Neptunium,237;Pu,Plutonium,244;Am,Americium,243;Cm,Curium,247;Bk,Berkelium,247;Cf,Californium,251;Es,Einsteinium,252;Fm,Fermium,257;Md,Mendelevium,258;No,Nobelium,259;Lr,Lawrencium,262`.split(';').map((s,i)=>{const [sym,name,ar]=s.split(',');return {z:i+1,sym,name,ar:parseFloat(ar)};});
   const box=$('ptp'),btn=$('ptBtn'),bar=$('ptBar'),view=$('ptView'),det=$('ptDetail'),search=$('ptSearch');
   const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+  const DEF='Tap an element to pin its atomic number, symbol and relative atomic mass here. It stays until you choose another.';
+  const picks=[];let multi=false;
+  const has=z=>picks.some(p=>p.z===z),cnt=z=>{const p=picks.find(p=>p.z===z);return p?p.n:0;};
+  const SYM={};EL.forEach(e=>{SYM[e.sym]=e;});
+  function addPick(z,d){
+    let p=picks.find(x=>x.z===z);
+    if(!p){if(d<=0)return;p={z,n:0};picks.push(p);}
+    p.n=Math.min(99,p.n+d);
+    if(p.n<=0)picks.splice(picks.indexOf(p),1);
+  }
+  const fmtn=x=>String(parseFloat(Number(x).toPrecision(8)));
+  function parseFormula(raw){
+    let s=raw.replace(/[₀-₉]/g,d=>'₀₁₂₃₄₅₆₇₈₉'.indexOf(d)).replace(/\s+/g,'').replace(/\[/g,'(').replace(/\]/g,')');
+    if(!s)return null;
+    const total={};
+    for(const seg of s.split(/[.·•*]/)){
+      const mm=seg.match(/^(\d*)(.*)$/),mult=mm[1]?parseInt(mm[1],10):1,body=mm[2];
+      if(!body)throw new Error('Something is missing after the dot');
+      let i=0;
+      const num=()=>{let t='';while(i<body.length&&/\d/.test(body[i]))t+=body[i++];return t?parseInt(t,10):1;};
+      const grp=()=>{
+        const m={};
+        while(i<body.length){
+          const c=body[i];
+          if(c==='('){i++;const sub=grp();if(body[i]!==')')throw new Error('A bracket is not closed');i++;const n=num();for(const k in sub)m[k]=(m[k]||0)+sub[k]*n;}
+          else if(c===')')return m;
+          else if(/[A-Z]/.test(c)){let el=c;i++;while(i<body.length&&/[a-z]/.test(body[i]))el+=body[i++];if(!SYM[el])throw new Error('“'+el+'” is not an element symbol');m[el]=(m[el]||0)+num();}
+          else if(/[a-z]/.test(c))throw new Error('Element symbols start with a capital letter, for example Cu, not cu');
+          else throw new Error('Unexpected “'+c+'”');
+        }
+        return m;
+      };
+      const r=grp();
+      if(i<body.length)throw new Error('There is a ) without a matching (');
+      for(const k in r)total[k]=(total[k]||0)+r[k]*mult;
+    }
+    return total;
+  }
+  function renderMr(){
+    const out=$('ptMrOut'),raw=$('ptFormula').value;
+    if(!raw.trim()){out.innerHTML='';return;}
+    try{
+      const t=parseFormula(raw),keys=Object.keys(t);
+      if(!keys.length){out.innerHTML='';return;}
+      let sum=0;
+      const rows=keys.map(k=>{const sub=t[k]*SYM[k].ar;sum+=sub;return `<tr><td><b>${k}</b></td><td>${t[k]} × ${SYM[k].ar}</td><td>= ${fmtn(sub)}</td></tr>`;}).join('');
+      out.innerHTML=`<table><tbody>${rows}</tbody></table><div class="res">Mr = <b>${fmtn(sum)}</b></div>`;
+    }catch(err){out.innerHTML=`<div class="callout warn" style="padding:6px 10px">${err.message}</div>`;}
+  }
   let pos=null,mode='table',sel=null,size=store.get('moleLabPTSize')||(window.innerWidth<900?'s':'m'),fade=false;
   function applySize(){
     ['s','m','l'].forEach(k=>box.classList.toggle('sz-'+k,k===size));
@@ -1080,10 +1129,19 @@ document.addEventListener('keydown',e=>{
     if(!q)return true;
     return e.sym.toLowerCase()===q||e.name.toLowerCase().includes(q)||String(e.z)===q||e.sym.toLowerCase().startsWith(q);
   }
+  function renderPicks(){
+    const pk=$('ptPicks');
+    if(!picks.length&&!multi){pk.hidden=true;pk.innerHTML='';return;}
+    pk.hidden=false;
+    if(!picks.length){pk.innerHTML='<div>Select several is on. Tap elements to add them. Tap the same element again to add another of it.</div>';return;}
+    let sum=0;const terms=picks.map(p=>{const e=EL[p.z-1];sum+=p.n*e.ar;return (p.n>1?p.n+' × ':'')+e.ar;});
+    const total=picks.reduce((t,p)=>t+p.n,0);
+    pk.innerHTML=`<div><b>My list</b> (${total} atom${total===1?'':'s'})</div><div class="row">${picks.map(p=>{const e=EL[p.z-1];return `<span class="pk"><b>${e.sym}</b> ×${p.n} · Ar ${e.ar}<button data-dec="${p.z}" aria-label="One fewer ${e.name}">−</button><button data-inc="${p.z}" aria-label="One more ${e.name}">+</button><button class="x" data-rm="${p.z}" aria-label="Remove ${e.name} from the list">✕</button></span>`;}).join('')}<button class="chip" data-clearpicks style="background:var(--bad-soft);color:var(--bad)">Clear list</button></div><div class="tot">Total: ${terms.join(' + ')} = <b>${fmtn(sum)}</b>. This is the Mr if your list is the whole formula.</div>`;
+  }
   function render(){
     const q=search.value.trim();
     if(mode==='list'){
-      const rows=EL.filter(match).map(e=>`<tr><td>${e.z}</td><td><b>${e.sym}</b></td><td>${e.name}</td><td>${e.ar}</td></tr>`).join('');
+      const rows=EL.filter(match).map(e=>`<tr data-z="${e.z}" style="cursor:pointer${has(e.z)?';background:var(--teal-soft)':sel===e.z?';background:var(--accent-soft)':''}"><td>${e.z}</td><td><b>${e.sym}</b></td><td>${e.name}</td><td>${e.ar}</td></tr>`).join('');
       view.innerHTML=`<div class="ptl"><table><thead><tr><th>Atomic number</th><th>Symbol</th><th>Name</th><th>Ar</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No element matches.</td></tr>'}</tbody></table></div>`;
       return;
     }
@@ -1092,20 +1150,39 @@ document.addEventListener('keydown',e=>{
     h+=`<div class="ph" style="grid-column:3;grid-row:7">57–71</div><div class="ph" style="grid-column:3;grid-row:8">89–103</div>`;
     EL.forEach(e=>{
       const [c,r]=place(e.z),k=cat(e.z)[0],dim=q&&!match(e);
-      h+=`<button class="el ${k}${dim?' dim':''}${sel===e.z?' sel':''}" data-z="${e.z}" style="grid-column:${c};grid-row:${r}" aria-label="${e.name}, atomic number ${e.z}, relative atomic mass ${e.ar}"><span class="z">${e.z}</span><span class="s">${e.sym}</span><span class="a">${e.ar}</span></button>`;
+      h+=`<button class="el ${k}${dim?' dim':''}${sel===e.z?' sel':''}${has(e.z)?' pick':''}" data-z="${e.z}" style="grid-column:${c};grid-row:${r}" aria-label="${e.name}, atomic number ${e.z}, relative atomic mass ${e.ar}"><span class="z">${e.z}</span><span class="s">${e.sym}</span><span class="a">${e.ar}</span>${cnt(e.z)>1?`<span class="cnt">×${cnt(e.z)}</span>`:''}</button>`;
     });
     view.innerHTML=h+'</div>';
   }
-  function showDetail(z){sel=z;det.innerHTML=info(EL[z-1]);view.querySelectorAll('.el.sel').forEach(b=>b.classList.remove('sel'));const b=view.querySelector(`[data-z="${z}"]`);if(b)b.classList.add('sel');}
-  view.addEventListener('click',e=>{const b=e.target.closest('[data-z]');if(b)showDetail(+b.dataset.z);});
-  view.addEventListener('mouseover',e=>{const b=e.target.closest('[data-z]');if(b)det.innerHTML=info(EL[+b.dataset.z-1]);});
-  view.addEventListener('focusin',e=>{const b=e.target.closest('[data-z]');if(b)det.innerHTML=info(EL[+b.dataset.z-1]);});
+  function showDetail(z){sel=z;det.innerHTML=info(EL[z-1])+' <button class="chip" data-clr style="padding:2px 10px;font-size:12px;margin-left:6px">Clear</button>';view.querySelectorAll('.el.sel').forEach(b=>b.classList.remove('sel'));const b=view.querySelector(`[data-z="${z}"]`);if(b)b.classList.add('sel');}
+  view.addEventListener('click',e=>{
+    const b=e.target.closest('[data-z]');if(!b)return;
+    const z=+b.dataset.z;
+    if(multi){addPick(z,1);render();renderPicks();showDetail(z);}
+    else showDetail(z);
+  });
+  $('ptPicks').addEventListener('click',e=>{
+    const inc=e.target.closest('[data-inc]'),dec=e.target.closest('[data-dec]'),rm=e.target.closest('[data-rm]');
+    if(inc)addPick(+inc.dataset.inc,1);
+    else if(dec)addPick(+dec.dataset.dec,-1);
+    else if(rm){const p=picks.find(x=>x.z===+rm.dataset.rm);if(p)picks.splice(picks.indexOf(p),1);}
+    else if(e.target.closest('[data-clearpicks]'))picks.length=0;
+    else return;
+    render();renderPicks();
+  });
+  $('ptFormula').addEventListener('input',renderMr);
+  $('ptMulti').addEventListener('click',()=>{
+    multi=!multi;$('ptMulti').setAttribute('aria-pressed',multi);$('ptMulti').textContent=multi?'Select several: on':'Select several';
+    renderPicks();
+  });
+  det.addEventListener('click',e=>{if(e.target.closest('[data-clr]')){sel=null;view.querySelectorAll('.el.sel').forEach(x=>x.classList.remove('sel'));det.textContent=DEF;}});
+  view.addEventListener('mouseover',e=>{if(sel!==null)return;const b=e.target.closest('[data-z]');if(b)det.innerHTML=info(EL[+b.dataset.z-1]);});
+  view.addEventListener('focusin',e=>{if(sel!==null)return;const b=e.target.closest('[data-z]');if(b)det.innerHTML=info(EL[+b.dataset.z-1]);});
   search.addEventListener('input',()=>{
     render();
     const m=EL.filter(match);
     if(search.value.trim()&&m.length===1){showDetail(m[0].z);}
-    else if(search.value.trim()&&m.length>1&&m.length<=8){det.innerHTML=m.map(e=>`<span style="display:inline-block;margin-right:12px"><b>${e.sym}</b> ${e.name}: Z ${e.z}, Ar ${e.ar}</span>`).join('');}
-    else if(!search.value.trim()){det.textContent='Hover over or tap an element to see its atomic number, symbol and relative atomic mass.';}
+    else if(!search.value.trim()&&sel===null){det.textContent=DEF;}
   });
   box.querySelectorAll('[data-sz]').forEach(b=>b.addEventListener('click',()=>{size=b.dataset.sz;applySize();clamp();}));
   $('ptFade').addEventListener('click',()=>{fade=!fade;applyFade();});
@@ -1122,13 +1199,13 @@ document.addEventListener('keydown',e=>{
     box.hidden=!on;btn.setAttribute('aria-pressed',on);btn.textContent='Periodic table: '+(on?'on':'off');
     btn.className=on?'btn teal':'btn';store.set('moleLabPT',on?'1':'0');
     if(on){
-      if(!view.innerHTML)render();
+      if(!view.innerHTML)render();renderPicks();
       if(!pos){let sx=null;try{sx=JSON.parse(store.get('moleLabPTPos'));}catch(e){}
         pos=sx&&typeof sx.x==='number'?sx:{x:16,y:90};}
       clamp();
     }
   }
-  btn.addEventListener('click',()=>setOn(box.hidden));
+  btn.addEventListener('click',()=>{if(box.hidden&&window.innerWidth<700&&!$('calc').hidden)$('calcClose').click();setOn(box.hidden);});
   $('ptClose').addEventListener('click',()=>setOn(false));
   $('ptMin').addEventListener('click',()=>{box.classList.toggle('min');$('ptMin').textContent=box.classList.contains('min')?'Full':'Compact';if(box.classList.contains('min')){fade=false;applyFade();}clamp();});
   let drag=null;
