@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mole Lab</title>
+<meta name="description" content="Interactive IGCSE mole calculation revision: reactions, balancing, virtual practicals, titration and limiting reagents.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Mole Lab</h1><p>IGCSE chemistry: from word equation to limiting reagent</p></div>
+    <div class="ctl"><div class="seg" id="modeSeg" role="group" aria-label="Difficulty mode"></div><button class="btn" id="calcBtn" aria-pressed="false" aria-controls="calc">Calculator: off</button></div>
+  </header>
+  <div class="modeNote" id="modeNote"></div>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+  <div id="labView">
+    <ol class="rail" id="rail"></ol>
+    <div class="eqbar" id="eqbar"></div>
+    <section class="stage" id="stage" style="margin-top:14px"></section>
+  </div>
+  <div id="toolView" hidden></div>
+  <div id="balView" hidden></div>
+</div>
+
+<div class="calc" id="calc" hidden role="dialog" aria-label="Calculator">
+  <div class="bar" id="calcBar"><span>Calculator</span><button id="calcMin" aria-label="Minimise calculator">Min</button><button id="calcClose" aria-label="Close calculator">Off</button></div>
+  <div class="body">
+    <div class="modes" role="group" aria-label="Calculator type"><button data-cm="basic" aria-pressed="true">Basic</button><button data-cm="sci" aria-pressed="false">Scientific</button></div>
+    <div class="hist" id="calcHist" aria-live="polite"></div>
+    <input type="text" id="calcIn" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Calculator display" placeholder="0">
+    <div class="keys" id="calcKeys">
+      <button class="sci op" data-k="^">xʸ</button><button class="sci op" data-k="√(">√</button><button class="sci op" data-k="e">×10ⁿ</button><button class="sci op" data-k="Ans">Ans</button>
+      <button class="clr" data-k="C">C</button><button class="clr" data-k="BS">⌫</button><button class="op" data-k="(">(</button><button class="op" data-k=")">)</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="÷">÷</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="×">×</button>
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="−">−</button>
+      <button data-k="0">0</button><button data-k=".">.</button><button class="eq" data-k="=">=</button><button class="op" data-k="+">+</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
