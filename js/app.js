@@ -364,7 +364,7 @@ function stage1(){
 
 /* ---------- step 2: formulae ---------- */
 function hintF(s){
-  if(s.ion){const c=s.ion.c,a=s.ion.a;return `Ions: ${sub(c.f)}${supd(c.c===1?'':c.c)}⁺ and ${sub(a.f)}${supd(a.c===1?'':a.c)}⁻. Balance the charges so they add to zero.`;}
+  if(s.ion){const c=s.ion.c,a=s.ion.a;return `<b>Positive ion:</b> ${sub(c.f)}${supd(c.c===1?'':c.c)}⁺ (${c.n})<br><b>Negative ion:</b> ${sub(a.f)}${supd(a.c===1?'':a.c)}⁻ (${a.n})<br>Balance the charges so they add to zero.`;}
   if(['H2','O2','Cl2','N2'].includes(s.f))return 'A diatomic element: its molecules are two atoms joined together.';
   if(Object.keys(parse(s.f)).length===1&&!/\d/.test(s.f))return 'An element on its own: just its symbol.';
   const n=Object.values(parse(s.f)).reduce((a,b)=>a+b,0);
@@ -385,7 +385,9 @@ function stage2(){
     }
     return `<div class="frow"><div><b>${s.name}</b><div class="hint">${role}, ${({solid:'solid',liquid:'liquid',gas:'gas',aq:'in solution'})[s.form]}</div></div><div>${mid}</div><div class="hint">${hint}</div></div>`;
   }).join('');
-  const ions=S.mode==='challenge'?'':`<details><summary>Ion charges you need to know</summary><div class="ions"><span>Na⁺ K⁺ Ag⁺ NH₄⁺ H⁺</span><span>Mg²⁺ Ca²⁺ Zn²⁺ Cu²⁺ Fe²⁺</span><span>Al³⁺ Fe³⁺</span><span>Cl⁻ NO₃⁻ OH⁻ CH₃COO⁻</span><span>O²⁻ S²⁻ SO₄²⁻ CO₃²⁻</span><span>PO₄³⁻</span></div></details>`;
+  const ions=S.mode==='challenge'?'':`<details><summary>Ion charges you need to know</summary><div class="ionsets">
+    <div class="ionset pos"><h3>Positive ions (cations)</h3><div class="ionrow"><b>1+</b><span>Na⁺ sodium</span><span>K⁺ potassium</span><span>Ag⁺ silver</span><span>NH₄⁺ ammonium</span><span>H⁺ hydrogen</span></div><div class="ionrow"><b>2+</b><span>Mg²⁺ magnesium</span><span>Ca²⁺ calcium</span><span>Zn²⁺ zinc</span><span>Cu²⁺ copper(II)</span><span>Fe²⁺ iron(II)</span></div><div class="ionrow"><b>3+</b><span>Al³⁺ aluminium</span><span>Fe³⁺ iron(III)</span></div></div>
+    <div class="ionset neg"><h3>Negative ions (anions)</h3><div class="ionrow"><b>1−</b><span>Cl⁻ chloride</span><span>OH⁻ hydroxide</span><span>NO₃⁻ nitrate</span><span>CH₃COO⁻ ethanoate</span></div><div class="ionrow"><b>2−</b><span>O²⁻ oxide</span><span>S²⁻ sulfide</span><span>SO₄²⁻ sulfate</span><span>CO₃²⁻ carbonate</span></div><div class="ionrow"><b>3−</b><span>PO₄³⁻ phosphate</span></div></div></div></details>`;
   const btns=S.mode==='worked'?'':`<div class="chips">${S.mode!=='guided'?'<button class="btn teal" data-act="check" data-p="f">Check formulae</button>':''}<button class="btn" data-act="showall" data-p="f">Show all answers</button></div>`;
   $('stage').innerHTML=`<header><h2>Step 2 · Write the formulae</h2><p>${S.mode==='worked'?'Each formula below is built from the ions or the molecule. Read the reason beside it.':'Type the chemical formula for each substance. Subscripts can be typed as ordinary numbers, for example H2O or Ca(OH)2.'}</p></header>
   <div class="rows">${rows}</div>${btns}${ions}${navHTML()}`;
@@ -1038,7 +1040,13 @@ document.addEventListener('keydown',e=>{
   const EL=`H,Hydrogen,1;He,Helium,4;Li,Lithium,7;Be,Beryllium,9;B,Boron,11;C,Carbon,12;N,Nitrogen,14;O,Oxygen,16;F,Fluorine,19;Ne,Neon,20;Na,Sodium,23;Mg,Magnesium,24;Al,Aluminium,27;Si,Silicon,28;P,Phosphorus,31;S,Sulfur,32;Cl,Chlorine,35.5;Ar,Argon,40;K,Potassium,39;Ca,Calcium,40;Sc,Scandium,45;Ti,Titanium,48;V,Vanadium,51;Cr,Chromium,52;Mn,Manganese,55;Fe,Iron,56;Co,Cobalt,59;Ni,Nickel,59;Cu,Copper,64;Zn,Zinc,65;Ga,Gallium,70;Ge,Germanium,73;As,Arsenic,75;Se,Selenium,79;Br,Bromine,80;Kr,Krypton,84;Rb,Rubidium,85;Sr,Strontium,88;Y,Yttrium,89;Zr,Zirconium,91;Nb,Niobium,93;Mo,Molybdenum,96;Tc,Technetium,98;Ru,Ruthenium,101;Rh,Rhodium,103;Pd,Palladium,106;Ag,Silver,108;Cd,Cadmium,112;In,Indium,115;Sn,Tin,119;Sb,Antimony,122;Te,Tellurium,128;I,Iodine,127;Xe,Xenon,131;Cs,Caesium,133;Ba,Barium,137;La,Lanthanum,139;Ce,Cerium,140;Pr,Praseodymium,141;Nd,Neodymium,144;Pm,Promethium,147;Sm,Samarium,150;Eu,Europium,152;Gd,Gadolinium,157;Tb,Terbium,159;Dy,Dysprosium,163;Ho,Holmium,165;Er,Erbium,167;Tm,Thulium,169;Yb,Ytterbium,173;Lu,Lutetium,175;Hf,Hafnium,178;Ta,Tantalum,181;W,Tungsten,184;Re,Rhenium,186;Os,Osmium,190;Ir,Iridium,192;Pt,Platinum,195;Au,Gold,197;Hg,Mercury,201;Tl,Thallium,204;Pb,Lead,207;Bi,Bismuth,209;Po,Polonium,209;At,Astatine,210;Rn,Radon,222;Fr,Francium,223;Ra,Radium,226;Ac,Actinium,227;Th,Thorium,232;Pa,Protactinium,231;U,Uranium,238;Np,Neptunium,237;Pu,Plutonium,244;Am,Americium,243;Cm,Curium,247;Bk,Berkelium,247;Cf,Californium,251;Es,Einsteinium,252;Fm,Fermium,257;Md,Mendelevium,258;No,Nobelium,259;Lr,Lawrencium,262`.split(';').map((s,i)=>{const [sym,name,ar]=s.split(',');return {z:i+1,sym,name,ar:parseFloat(ar)};});
   const box=$('ptp'),btn=$('ptBtn'),bar=$('ptBar'),view=$('ptView'),det=$('ptDetail'),search=$('ptSearch');
   const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
-  let pos=null,mode='table',sel=null;
+  let pos=null,mode='table',sel=null,size=store.get('moleLabPTSize')||(window.innerWidth<900?'s':'m'),fade=false;
+  function applySize(){
+    ['s','m','l'].forEach(k=>box.classList.toggle('sz-'+k,k===size));
+    box.querySelectorAll('[data-sz]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sz===size));
+    store.set('moleLabPTSize',size);
+  }
+  function applyFade(){box.classList.toggle('fade',fade);$('ptFade').setAttribute('aria-pressed',fade);$('ptFade').textContent=fade?'Fade: on':'Fade';}
   const inList=(z,a)=>a.includes(z);
   function cat(z){
     if(inList(z,[3,11,19,37,55,87]))return ['k-alk','Group 1 metal (alkali metal)'];
@@ -1096,7 +1104,11 @@ document.addEventListener('keydown',e=>{
     render();
     const m=EL.filter(match);
     if(search.value.trim()&&m.length===1){showDetail(m[0].z);}
+    else if(search.value.trim()&&m.length>1&&m.length<=8){det.innerHTML=m.map(e=>`<span style="display:inline-block;margin-right:12px"><b>${e.sym}</b> ${e.name}: Z ${e.z}, Ar ${e.ar}</span>`).join('');}
+    else if(!search.value.trim()){det.textContent='Hover over or tap an element to see its atomic number, symbol and relative atomic mass.';}
   });
+  box.querySelectorAll('[data-sz]').forEach(b=>b.addEventListener('click',()=>{size=b.dataset.sz;applySize();clamp();}));
+  $('ptFade').addEventListener('click',()=>{fade=!fade;applyFade();});
   box.querySelectorAll('[data-pv]').forEach(b=>b.addEventListener('click',()=>{
     mode=b.dataset.pv;box.querySelectorAll('[data-pv]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.pv===mode));render();clamp();
   }));
@@ -1118,13 +1130,14 @@ document.addEventListener('keydown',e=>{
   }
   btn.addEventListener('click',()=>setOn(box.hidden));
   $('ptClose').addEventListener('click',()=>setOn(false));
-  $('ptMin').addEventListener('click',()=>{box.classList.toggle('min');$('ptMin').textContent=box.classList.contains('min')?'Open':'Min';clamp();});
+  $('ptMin').addEventListener('click',()=>{box.classList.toggle('min');$('ptMin').textContent=box.classList.contains('min')?'Full':'Compact';if(box.classList.contains('min')){fade=false;applyFade();}clamp();});
   let drag=null;
   bar.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;drag={dx:e.clientX-pos.x,dy:e.clientY-pos.y};bar.setPointerCapture(e.pointerId);});
   bar.addEventListener('pointermove',e=>{if(!drag)return;pos.x=e.clientX-drag.dx;pos.y=e.clientY-drag.dy;clamp();});
   const end=()=>{if(drag){drag=null;store.set('moleLabPTPos',JSON.stringify(pos));}};
   bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
   window.addEventListener('resize',clamp);
+  applySize();
   if(store.get('moleLabPT')==='1')setOn(true);
 })();
 

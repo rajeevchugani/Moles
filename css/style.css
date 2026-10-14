@@ -150,7 +150,19 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .ptp .bar span{flex:1}
 .ptp .bar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:3px 8px;font-size:12px;font-weight:600}
 .ptp .body{padding:10px;display:flex;flex-direction:column;gap:8px;max-height:min(78vh,640px);overflow:auto}
-.ptp.min .body{display:none}
+.ptp.min .body{max-height:none;overflow:visible}
+.ptp.min #ptView,.ptp.min .leg,.ptp.min .pnote,.ptp.min .tchips,.ptp.min #ptFade{display:none}
+.ptp.sz-s{width:min(540px,calc(100vw - 16px))}.ptp.sz-m{width:min(690px,calc(100vw - 16px))}
+.ptp.sz-s .pt{grid-template-columns:repeat(18,minmax(26px,1fr));min-width:500px;gap:1px}
+.ptp.sz-m .pt{grid-template-columns:repeat(18,minmax(34px,1fr));min-width:640px}
+.ptp.sz-s .pt button.el,.ptp.sz-s .pt .ph{min-height:32px;padding:0 1px}
+.ptp.sz-s .pt button.el .s{font-size:12px}.ptp.sz-s .pt button.el .z{font-size:7px}.ptp.sz-s .pt button.el .a{font-size:8px}
+.ptp.sz-m .pt button.el{min-height:40px}.ptp.sz-m .pt button.el .s{font-size:13px}
+.ptp.sz-s .body{max-height:min(60vh,420px)}
+.ptp.fade{opacity:.45}
+.ptp.fade .body{pointer-events:none}
+.ptp.fade:has(.bar:hover){opacity:.95}
+.ptp.fade .ptd,.ptp.fade .tools{opacity:1}
 .ptp .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ptp .tools input{max-width:220px}
 .ptp .tools .chip{padding:5px 12px}
@@ -180,6 +192,12 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .ptl{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:10px}
 .ptl table{font-size:13px}.ptl td,.ptl th{padding:5px 10px;text-align:left}
 .ptl th{position:sticky;top:0}
+.ionsets{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+.ionset{border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ionset.pos{background:var(--accent-soft)}.ionset.neg{background:var(--teal-soft)}
+.ionset h3{font-size:14px}
+.ionrow{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--font-m);font-size:13px;align-items:baseline}
+.ionrow b{min-width:2em}
 @media (max-width:640px){
   .stage{padding:14px}.frow{grid-template-columns:1fr}.seg{grid-template-columns:repeat(2,1fr);width:100%}
   h1{font-size:26px}.eq{font-size:17px}.eq.chem{font-size:17px}
