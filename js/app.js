@@ -956,4 +956,99 @@ document.addEventListener('keydown',e=>{
   if(store.get('moleLabCalc')==='1')setOn(true);
 })();
 
+/* ---------- periodic table panel ---------- */
+(function(){
+  const EL=`H,Hydrogen,1;He,Helium,4;Li,Lithium,7;Be,Beryllium,9;B,Boron,11;C,Carbon,12;N,Nitrogen,14;O,Oxygen,16;F,Fluorine,19;Ne,Neon,20;Na,Sodium,23;Mg,Magnesium,24;Al,Aluminium,27;Si,Silicon,28;P,Phosphorus,31;S,Sulfur,32;Cl,Chlorine,35.5;Ar,Argon,40;K,Potassium,39;Ca,Calcium,40;Sc,Scandium,45;Ti,Titanium,48;V,Vanadium,51;Cr,Chromium,52;Mn,Manganese,55;Fe,Iron,56;Co,Cobalt,59;Ni,Nickel,59;Cu,Copper,64;Zn,Zinc,65;Ga,Gallium,70;Ge,Germanium,73;As,Arsenic,75;Se,Selenium,79;Br,Bromine,80;Kr,Krypton,84;Rb,Rubidium,85;Sr,Strontium,88;Y,Yttrium,89;Zr,Zirconium,91;Nb,Niobium,93;Mo,Molybdenum,96;Tc,Technetium,98;Ru,Ruthenium,101;Rh,Rhodium,103;Pd,Palladium,106;Ag,Silver,108;Cd,Cadmium,112;In,Indium,115;Sn,Tin,119;Sb,Antimony,122;Te,Tellurium,128;I,Iodine,127;Xe,Xenon,131;Cs,Caesium,133;Ba,Barium,137;La,Lanthanum,139;Ce,Cerium,140;Pr,Praseodymium,141;Nd,Neodymium,144;Pm,Promethium,147;Sm,Samarium,150;Eu,Europium,152;Gd,Gadolinium,157;Tb,Terbium,159;Dy,Dysprosium,163;Ho,Holmium,165;Er,Erbium,167;Tm,Thulium,169;Yb,Ytterbium,173;Lu,Lutetium,175;Hf,Hafnium,178;Ta,Tantalum,181;W,Tungsten,184;Re,Rhenium,186;Os,Osmium,190;Ir,Iridium,192;Pt,Platinum,195;Au,Gold,197;Hg,Mercury,201;Tl,Thallium,204;Pb,Lead,207;Bi,Bismuth,209;Po,Polonium,209;At,Astatine,210;Rn,Radon,222;Fr,Francium,223;Ra,Radium,226;Ac,Actinium,227;Th,Thorium,232;Pa,Protactinium,231;U,Uranium,238;Np,Neptunium,237;Pu,Plutonium,244;Am,Americium,243;Cm,Curium,247;Bk,Berkelium,247;Cf,Californium,251;Es,Einsteinium,252;Fm,Fermium,257;Md,Mendelevium,258;No,Nobelium,259;Lr,Lawrencium,262`.split(';').map((s,i)=>{const [sym,name,ar]=s.split(',');return {z:i+1,sym,name,ar:parseFloat(ar)};});
+  const box=$('ptp'),btn=$('ptBtn'),bar=$('ptBar'),view=$('ptView'),det=$('ptDetail'),search=$('ptSearch');
+  const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+  let pos=null,mode='table',sel=null;
+  const inList=(z,a)=>a.includes(z);
+  function cat(z){
+    if(inList(z,[3,11,19,37,55,87]))return ['k-alk','Group 1 metal (alkali metal)'];
+    if(inList(z,[4,12,20,38,56,88]))return ['k-aea','Group 2 metal (alkaline earth metal)'];
+    if(inList(z,[2,10,18,36,54,86]))return ['k-nob','Noble gas (Group 18)'];
+    if(inList(z,[9,17,35,53,85]))return ['k-hal','Halogen (Group 17)'];
+    if(z>=57&&z<=71)return ['k-lan','Lanthanoid'];
+    if(z>=89)return ['k-act','Actinoid'];
+    if((z>=21&&z<=30)||(z>=39&&z<=48)||(z>=72&&z<=80))return ['k-trn','Transition metal'];
+    if(inList(z,[13,31,49,50,81,82,83]))return ['k-pt','Other metal'];
+    if(inList(z,[5,14,32,33,51,52,84]))return ['k-mtl','Metalloid'];
+    return ['k-nm','Non-metal'];
+  }
+  function place(z){
+    if(z===1)return [1,2];if(z===2)return [18,2];
+    if(z<=4)return [z-2,3];if(z<=10)return [13+z-5,3];
+    if(z<=12)return [z-10,4];if(z<=18)return [13+z-13,4];
+    if(z<=36)return [z-18,5];if(z<=54)return [z-36,6];
+    if(z<=56)return [z-54,7];if(z<=71)return [3+z-57,10];
+    if(z<=86)return [4+z-72,7];if(z<=88)return [z-86,8];
+    return [3+z-89,11];
+  }
+  function info(e){
+    const [c,r]=place(e.z),k=cat(e.z);
+    const gp=(e.z>=57&&e.z<=71)||(e.z>=89)?'':`Group ${c}, `;
+    const per=r===10?6:r===11?7:r-1;
+    return `<b>${e.sym}</b> ${e.name} · atomic number <b>${e.z}</b> · relative atomic mass (Ar) <b>${e.ar}</b><br><span style="color:var(--muted);font-size:13px">${gp}Period ${per} · ${k[1]}</span>`;
+  }
+  function match(e){
+    const q=search.value.trim().toLowerCase();
+    if(!q)return true;
+    return e.sym.toLowerCase()===q||e.name.toLowerCase().includes(q)||String(e.z)===q||e.sym.toLowerCase().startsWith(q);
+  }
+  function render(){
+    const q=search.value.trim();
+    if(mode==='list'){
+      const rows=EL.filter(match).map(e=>`<tr><td>${e.z}</td><td><b>${e.sym}</b></td><td>${e.name}</td><td>${e.ar}</td></tr>`).join('');
+      view.innerHTML=`<div class="ptl"><table><thead><tr><th>Atomic number</th><th>Symbol</th><th>Name</th><th>Ar</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No element matches.</td></tr>'}</tbody></table></div>`;
+      return;
+    }
+    let h='<div class="pt" role="group" aria-label="Periodic table of elements">';
+    for(let g=1;g<=18;g++)h+=`<div class="g" style="grid-column:${g};grid-row:1">${g}</div>`;
+    h+=`<div class="ph" style="grid-column:3;grid-row:7">57–71</div><div class="ph" style="grid-column:3;grid-row:8">89–103</div>`;
+    EL.forEach(e=>{
+      const [c,r]=place(e.z),k=cat(e.z)[0],dim=q&&!match(e);
+      h+=`<button class="el ${k}${dim?' dim':''}${sel===e.z?' sel':''}" data-z="${e.z}" style="grid-column:${c};grid-row:${r}" aria-label="${e.name}, atomic number ${e.z}, relative atomic mass ${e.ar}"><span class="z">${e.z}</span><span class="s">${e.sym}</span><span class="a">${e.ar}</span></button>`;
+    });
+    view.innerHTML=h+'</div>';
+  }
+  function showDetail(z){sel=z;det.innerHTML=info(EL[z-1]);view.querySelectorAll('.el.sel').forEach(b=>b.classList.remove('sel'));const b=view.querySelector(`[data-z="${z}"]`);if(b)b.classList.add('sel');}
+  view.addEventListener('click',e=>{const b=e.target.closest('[data-z]');if(b)showDetail(+b.dataset.z);});
+  view.addEventListener('mouseover',e=>{const b=e.target.closest('[data-z]');if(b)det.innerHTML=info(EL[+b.dataset.z-1]);});
+  view.addEventListener('focusin',e=>{const b=e.target.closest('[data-z]');if(b)det.innerHTML=info(EL[+b.dataset.z-1]);});
+  search.addEventListener('input',()=>{
+    render();
+    const m=EL.filter(match);
+    if(search.value.trim()&&m.length===1){showDetail(m[0].z);}
+  });
+  box.querySelectorAll('[data-pv]').forEach(b=>b.addEventListener('click',()=>{
+    mode=b.dataset.pv;box.querySelectorAll('[data-pv]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.pv===mode));render();clamp();
+  }));
+  function clamp(){
+    if(!pos)return;
+    const w=box.offsetWidth,hh=box.offsetHeight;
+    pos.x=Math.max(8,Math.min(window.innerWidth-w-8,pos.x));pos.y=Math.max(8,Math.min(window.innerHeight-hh-8,pos.y));
+    box.style.left=pos.x+'px';box.style.top=pos.y+'px';
+  }
+  function setOn(on){
+    box.hidden=!on;btn.setAttribute('aria-pressed',on);btn.textContent='Periodic table: '+(on?'on':'off');
+    btn.className=on?'btn teal':'btn';store.set('moleLabPT',on?'1':'0');
+    if(on){
+      if(!view.innerHTML)render();
+      if(!pos){let sx=null;try{sx=JSON.parse(store.get('moleLabPTPos'));}catch(e){}
+        pos=sx&&typeof sx.x==='number'?sx:{x:16,y:90};}
+      clamp();
+    }
+  }
+  btn.addEventListener('click',()=>setOn(box.hidden));
+  $('ptClose').addEventListener('click',()=>setOn(false));
+  $('ptMin').addEventListener('click',()=>{box.classList.toggle('min');$('ptMin').textContent=box.classList.contains('min')?'Open':'Min';clamp();});
+  let drag=null;
+  bar.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;drag={dx:e.clientX-pos.x,dy:e.clientY-pos.y};bar.setPointerCapture(e.pointerId);});
+  bar.addEventListener('pointermove',e=>{if(!drag)return;pos.x=e.clientX-drag.dx;pos.y=e.clientY-drag.dy;clamp();});
+  const end=()=>{if(drag){drag=null;store.set('moleLabPTPos',JSON.stringify(pos));}};
+  bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
+  window.addEventListener('resize',clamp);
+  if(store.get('moleLabPT')==='1')setOn(true);
+})();
+
 setReaction();
