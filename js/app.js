@@ -1040,7 +1040,7 @@ document.addEventListener('keydown',e=>{
   const EL=`H,Hydrogen,1;He,Helium,4;Li,Lithium,7;Be,Beryllium,9;B,Boron,11;C,Carbon,12;N,Nitrogen,14;O,Oxygen,16;F,Fluorine,19;Ne,Neon,20;Na,Sodium,23;Mg,Magnesium,24;Al,Aluminium,27;Si,Silicon,28;P,Phosphorus,31;S,Sulfur,32;Cl,Chlorine,35.5;Ar,Argon,40;K,Potassium,39;Ca,Calcium,40;Sc,Scandium,45;Ti,Titanium,48;V,Vanadium,51;Cr,Chromium,52;Mn,Manganese,55;Fe,Iron,56;Co,Cobalt,59;Ni,Nickel,59;Cu,Copper,64;Zn,Zinc,65;Ga,Gallium,70;Ge,Germanium,73;As,Arsenic,75;Se,Selenium,79;Br,Bromine,80;Kr,Krypton,84;Rb,Rubidium,85;Sr,Strontium,88;Y,Yttrium,89;Zr,Zirconium,91;Nb,Niobium,93;Mo,Molybdenum,96;Tc,Technetium,98;Ru,Ruthenium,101;Rh,Rhodium,103;Pd,Palladium,106;Ag,Silver,108;Cd,Cadmium,112;In,Indium,115;Sn,Tin,119;Sb,Antimony,122;Te,Tellurium,128;I,Iodine,127;Xe,Xenon,131;Cs,Caesium,133;Ba,Barium,137;La,Lanthanum,139;Ce,Cerium,140;Pr,Praseodymium,141;Nd,Neodymium,144;Pm,Promethium,147;Sm,Samarium,150;Eu,Europium,152;Gd,Gadolinium,157;Tb,Terbium,159;Dy,Dysprosium,163;Ho,Holmium,165;Er,Erbium,167;Tm,Thulium,169;Yb,Ytterbium,173;Lu,Lutetium,175;Hf,Hafnium,178;Ta,Tantalum,181;W,Tungsten,184;Re,Rhenium,186;Os,Osmium,190;Ir,Iridium,192;Pt,Platinum,195;Au,Gold,197;Hg,Mercury,201;Tl,Thallium,204;Pb,Lead,207;Bi,Bismuth,209;Po,Polonium,209;At,Astatine,210;Rn,Radon,222;Fr,Francium,223;Ra,Radium,226;Ac,Actinium,227;Th,Thorium,232;Pa,Protactinium,231;U,Uranium,238;Np,Neptunium,237;Pu,Plutonium,244;Am,Americium,243;Cm,Curium,247;Bk,Berkelium,247;Cf,Californium,251;Es,Einsteinium,252;Fm,Fermium,257;Md,Mendelevium,258;No,Nobelium,259;Lr,Lawrencium,262`.split(';').map((s,i)=>{const [sym,name,ar]=s.split(',');return {z:i+1,sym,name,ar:parseFloat(ar)};});
   const box=$('ptp'),btn=$('ptBtn'),bar=$('ptBar'),view=$('ptView'),det=$('ptDetail'),search=$('ptSearch');
   const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
-  const DEF='Tap an element to pin its atomic number, symbol and relative atomic mass here. It stays until you choose another.';
+  const DEF='Tap an element to pin its details here.';
   const picks=[];let multi=false;
   const has=z=>picks.some(p=>p.z===z),cnt=z=>{const p=picks.find(p=>p.z===z);return p?p.n:0;};
   const SYM={};EL.forEach(e=>{SYM[e.sym]=e;});
@@ -1095,7 +1095,7 @@ document.addEventListener('keydown',e=>{
     box.querySelectorAll('[data-sz]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sz===size));
     store.set('moleLabPTSize',size);
   }
-  function applyFade(){box.classList.toggle('fade',fade);$('ptFade').setAttribute('aria-pressed',fade);$('ptFade').textContent=fade?'Fade: on, tap to restore':'Fade';}
+  function applyFade(){box.classList.toggle('fade',fade);$('ptFade').setAttribute('aria-pressed',fade);}
   const inList=(z,a)=>a.includes(z);
   function cat(z){
     if(inList(z,[3,11,19,37,55,87]))return ['k-alk','Group 1 metal (alkali metal)'];
@@ -1131,9 +1131,9 @@ document.addEventListener('keydown',e=>{
   }
   function renderPicks(){
     const pk=$('ptPicks');
-    if(!picks.length&&!multi){pk.hidden=true;pk.innerHTML='';return;}
-    pk.hidden=false;
-    if(!picks.length){pk.innerHTML='<div>Select several is on. Tap elements to add them. Tap the same element again to add another of it.</div>';return;}
+    pk.hidden=!multi;
+    if(!multi)return;
+    if(!picks.length){pk.innerHTML='<div class="hintline">Tap elements to add them. Tap again for more.</div>';return;}
     let sum=0;const terms=picks.map(p=>{const e=EL[p.z-1];sum+=p.n*e.ar;return (p.n>1?p.n+' × ':'')+e.ar;});
     const total=picks.reduce((t,p)=>t+p.n,0);
     pk.innerHTML=`<div><b>My list</b> (${total} atom${total===1?'':'s'})</div><div class="row">${picks.map(p=>{const e=EL[p.z-1];return `<span class="pk"><b>${e.sym}</b> ×${p.n} · Ar ${e.ar}<button data-dec="${p.z}" aria-label="One fewer ${e.name}">−</button><button data-inc="${p.z}" aria-label="One more ${e.name}">+</button><button class="x" data-rm="${p.z}" aria-label="Remove ${e.name} from the list">✕</button></span>`;}).join('')}<button class="chip" data-clearpicks style="background:var(--bad-soft);color:var(--bad)">Clear list</button></div><div class="tot">Total: ${terms.join(' + ')} = <b>${fmtn(sum)}</b>. This is the Mr if your list is the whole formula.</div>`;
@@ -1172,7 +1172,7 @@ document.addEventListener('keydown',e=>{
   });
   $('ptFormula').addEventListener('input',renderMr);
   $('ptMulti').addEventListener('click',()=>{
-    multi=!multi;$('ptMulti').setAttribute('aria-pressed',multi);$('ptMulti').textContent=multi?'Select several: on':'Select several';
+    multi=!multi;$('ptMulti').setAttribute('aria-pressed',multi);
     renderPicks();
   });
   det.addEventListener('click',e=>{if(e.target.closest('[data-clr]')){sel=null;view.querySelectorAll('.el.sel').forEach(x=>x.classList.remove('sel'));det.textContent=DEF;}});

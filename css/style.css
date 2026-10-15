@@ -177,7 +177,9 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .ptp .mrbox td,.ptp .mrbox th{padding:2px 12px 2px 0;text-align:left;border:0;background:none}
 .ptp .mrbox .res{font-size:15px}
 .ptp .picks{display:flex;flex-direction:column;gap:6px;padding:8px 12px;border-radius:10px;background:var(--teal-soft);border:1px solid var(--teal);font-size:13px}
+
 .ptp .picks[hidden]{display:none}
+.ptp .picks .hintline{color:var(--muted);min-height:20px;display:flex;align-items:center}
 .ptp .picks .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ptp .picks .chip{padding:3px 10px;font-size:12px;font-family:var(--font-m)}
 .ptp .picks .chip b{font-family:var(--font-d)}
@@ -207,7 +209,7 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .k-nob{background:color-mix(in srgb,var(--teal) 42%,var(--surface))!important}
 .k-lan{background:color-mix(in srgb,var(--warn) 10%,var(--surface))!important}
 .k-act{background:color-mix(in srgb,var(--bad) 10%,var(--surface))!important}
-.ptd{font-size:14px;min-height:42px;line-height:1.45;padding:8px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--line)}
+.ptd{font-size:14px;min-height:66px;line-height:1.45;padding:8px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--line)}
 .ptd b{font-family:var(--font-d);font-size:18px}
 .leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted)}
 .leg i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:4px}
