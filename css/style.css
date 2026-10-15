@@ -222,6 +222,16 @@ summary{cursor:pointer;font-weight:600;font-size:14px}
 .ionset h3{font-size:14px}
 .ionrow{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--font-m);font-size:13px;align-items:baseline}
 .ionrow b{min-width:2em}
+.slines{display:flex;flex-direction:column;gap:6px}
+.sline{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-size:14px;line-height:1.5;color:var(--ink)}
+.sline .sn{flex:0 0 auto;font-family:var(--font-m);font-size:12px;background:var(--surface2);border-radius:50%;width:22px;height:22px;display:grid;place-items:center}
+.sline .st{flex:1;min-width:0;overflow-wrap:anywhere}
+.sline .tp{flex:0 0 auto;font-size:11px;color:var(--muted);background:var(--surface2);border-radius:6px;padding:1px 7px;margin-top:2px}
+button.sline:hover{border-color:var(--teal)}
+.sline.sel{border-color:var(--accent);background:var(--accent-soft)}
+.sline.ok{border-color:var(--good);background:var(--good-soft)}
+.sline.bad{border-color:var(--bad);background:var(--bad-soft)}
+.q h3{font-size:15px;margin-top:6px}
 @media (max-width:640px){
   .stage{padding:14px}.frow{grid-template-columns:1fr}.seg{grid-template-columns:repeat(2,1fr);width:100%}
   h1{font-size:26px}.eq{font-size:17px}.eq.chem{font-size:17px}

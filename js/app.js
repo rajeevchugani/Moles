@@ -238,7 +238,7 @@ function setReaction(){
   renderAll();
 }
 function setMode(m){
-  S.mode=m;S.vals={};S.checked={};S.shown={};S.hintOpen={};S.okf={};S.reveal=0;
+  S.mode=m;if(typeof Z!=='undefined'&&Z.q){Z.sel=null;Z.type='';Z.ans='';Z.checked=false;Z.shown=false;Z.hint=false;Z.done=false;}S.vals={};S.checked={};S.shown={};S.hintOpen={};S.okf={};S.reveal=0;
   if(S.R&&S.R.valid)S.coefs=m==='worked'?S.R.coefs.slice():allSp().map(()=>1);
   renderAll();
 }
@@ -303,8 +303,8 @@ const simplest=()=>S.coefs.reduce((a,b)=>gcd(a,b))===1;
 function renderModes(){
   $('modeSeg').innerHTML=MODES.map(([k,l])=>`<button data-act="mode" data-m="${k}" aria-pressed="${S.mode===k}">${l}</button>`).join('');
   $('modeNote').textContent=MODES.find(m=>m[0]===S.mode)[2];
-  $('tabs').innerHTML=[['lab','Reaction lab'],['tool','Mole practice'],['bal','Balancing practice'],['yield','% yield practice']].map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('');
-  $('labView').hidden=S.tab!=='lab';$('toolView').hidden=S.tab!=='tool';$('balView').hidden=S.tab!=='bal';$('yView').hidden=S.tab!=='yield';
+  $('tabs').innerHTML=[['lab','Reaction lab'],['tool','Mole practice'],['bal','Balancing practice'],['yield','% yield practice'],['spot','Spot the mistake']].map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('');
+  $('labView').hidden=S.tab!=='lab';$('toolView').hidden=S.tab!=='tool';$('balView').hidden=S.tab!=='bal';$('yView').hidden=S.tab!=='yield';$('spotView').hidden=S.tab!=='spot';
 }
 const STEPS=['Reaction','Formulae','Balance','Experiment','Calculate'];
 function renderRail(){
@@ -342,7 +342,7 @@ function renderStage(){
 }
 function renderAll(){
   renderModes();
-  if(S.tab==='lab'){renderRail();renderEq();renderStage();}else if(S.tab==='tool')renderTool();else if(S.tab==='bal')renderBal();else renderYield();
+  if(S.tab==='lab'){renderRail();renderEq();renderStage();}else if(S.tab==='tool')renderTool();else if(S.tab==='bal')renderBal();else if(S.tab==='yield')renderYield();else renderSpot();
 }
 function go(n){S.step=n;renderRail();renderEq();renderStage();$('rail').scrollIntoView({block:'start',behavior:'smooth'});}
 
@@ -866,6 +866,257 @@ function renderYield(){
   <div class="score">${Y.ok} correct out of ${Y.n} checks</div></section>`;
 }
 
+/* ---------- spot the mistake ---------- */
+const ET={
+  mr:'Wrong relative formula mass (Mr)',
+  invert:'Multiplied when it should be divided, or the reverse',
+  ratio:'Ignored the mole ratio in the balanced equation',
+  units:'Unit conversion missed (cm³ and dm³)',
+  gasvol:'Wrong molar volume of a gas',
+  limiting:'Wrong limiting reagent (moles not divided by the coefficient)',
+  yield:'Percentage yield formula upside down'
+};
+const Z={q:null,sel:null,type:'',ans:'',checked:false,shown:false,hint:false,solved:0,done:false,last:'',order:[]};
+const dsp=x=>{if(!isFinite(x))return '?';const v=parseFloat(Number(x).toPrecision(4));let s=String(v);if(/e/.test(s))s=v.toFixed(8).replace(/0+$/,'').replace(/\.$/,'');return s;};
+function mrParts(f,wrongEl){const p=parse(f);let val=0;const t=Object.keys(p).map(e=>{const n=e===wrongEl?1:p[e];val+=n*AR[e];return (n>1?n+'×':'')+AR[e];}).join(' + ');return {txt:t,val};}
+const mrWrongEl=f=>{const p=parse(f);const ks=Object.keys(p).filter(e=>p[e]>1);return ks.length?ks[ks.length-1]:null;};
+const eqStr=R=>R.R.map((s,i)=>(R.coefs[i]>1?R.coefs[i]+' ':'')+fx(s.f)).join(' + ')+' → '+R.P.map((s,j)=>(R.coefs[R.R.length+j]>1?R.coefs[R.R.length+j]+' ':'')+fx(s.f)).join(' + ');
+const amtText=(s,a)=>s.form==='aq'?`${dsp(a.V)} cm³ of ${dsp(a.c)} mol/dm³ ${s.name.replace(' solution','')}`:s.form==='gas'?`${dsp(a.V)} dm³ of ${s.name}`:`${dsp(a.m)} g of ${s.name}`;
+function molLine(s,a){
+  const n=nOf(s,a);
+  const h=s.form==='aq'?`n(${fx(s.f)}) = c × V ÷ 1000 = ${dsp(a.c)} × ${dsp(a.V)} ÷ 1000 = <b>${dsp(n)} mol</b>`
+    :s.form==='gas'?`n(${fx(s.f)}) = V ÷ 24 = ${dsp(a.V)} ÷ 24 = <b>${dsp(n)} mol</b>`
+    :`n(${fx(s.f)}) = mass ÷ Mr = ${dsp(a.m)} ÷ ${dsp(mr(s.f))} = <b>${dsp(n)} mol</b>`;
+  return {h,n};
+}
+
+/* A: reacting mass or gas volume from one reactant */
+function paramsA(){
+  const cat=rnd(['synthesis','decomposition','combustion','displacement','neutralisation']);
+  const R=build(cat,randPick(cat));if(!R.valid)return null;
+  const nr=R.R.length,iA=R.R.findIndex(s=>s.form==='solid'||s.form==='liquid');if(iA<0)return null;
+  const js=R.P.map((s,j)=>j).filter(j=>R.P[j].form!=='aq');if(!js.length)return null;
+  const jB=rnd(js),A=R.R[iA],B=R.P[jB],MrA=mr(A.f);
+  const m=Math.round(rnd([0.05,0.1,0.15,0.2,0.25,0.4,0.5])*MrA*10)/10;if(m<1||m>60)return null;
+  const nB=m/MrA*R.coefs[nr+jB]/R.coefs[iA],out=B.form==='gas'?nB*24000:nB*mr(B.f);
+  if(B.form==='gas'?(out<150||out>30000):(out<0.3||out>80))return null;
+  return {R,iA,jB,m};
+}
+function lineA(P,err){
+  const {R,iA,jB,m}=P,nr=R.R.length,A=R.R[iA],B=R.P[jB],cA=R.coefs[iA],cB=R.coefs[nr+jB],gas=B.form==='gas';
+  const E=(t,s)=>!!err&&err.type===t&&err.step===s;let ex='';const L=[];
+  const wA=E('mr',1)?mrWrongEl(A.f):null,pa=mrParts(A.f,wA),MrA=pa.val;
+  if(wA)ex=`Every atom in the formula counts. ${fx(A.f)} contains ${parse(A.f)[wA]} atoms of ${wA}, so the Ar of ${wA} (${AR[wA]}) must be multiplied by ${parse(A.f)[wA]}.`;
+  L.push({h:`Mr of ${fx(A.f)} = ${pa.txt} = <b>${dsp(MrA)}</b>`,t:'relative formula mass'});
+  const i2=E('invert',2),nA=i2?m*MrA:m/MrA;
+  if(i2)ex='Moles = mass ÷ Mr, so the mass must be divided by the Mr. A check: a larger Mr means fewer moles in the same mass.';
+  L.push({h:`n(${fx(A.f)}) = ${i2?`mass × Mr = ${dsp(m)} × ${dsp(MrA)}`:`mass ÷ Mr = ${dsp(m)} ÷ ${dsp(MrA)}`} = <b>${dsp(nA)} mol</b>`,t:'moles'});
+  const r3=E('ratio',3),nB=r3?nA:nA*cB/cA;
+  if(r3)ex=`The balanced equation shows ${cA} mol ${fx(A.f)} makes ${cB} mol ${fx(B.f)}. The moles of ${fx(B.f)} are the moles of ${fx(A.f)} × ${cB} ÷ ${cA}.`;
+  L.push({h:r3?`n(${fx(B.f)}) = n(${fx(A.f)}) = <b>${dsp(nB)} mol</b>`:`From the equation, ${cA} mol ${fx(A.f)} gives ${cB} mol ${fx(B.f)}. n(${fx(B.f)}) = ${dsp(nA)} × ${cB} ÷ ${cA} = <b>${dsp(nB)} mol</b>`,t:'mole ratio'});
+  let final,unit;
+  if(gas){
+    const g4=E('gasvol',4),i4=E('invert',4),V=g4?nB*22.4:i4?nB/24:nB*24;
+    if(g4)ex='At room temperature and pressure one mole of any gas occupies 24 dm³. The value 22.4 dm³ applies at 0 °C and 1 atmosphere.';
+    if(i4)ex='Gas volume = moles × 24 dm³. More moles take up more space, so the moles are multiplied.';
+    L.push({h:`Volume of ${fx(B.f)} = n ${i4?'÷':'×'} ${g4?'22.4':'24'} = ${dsp(nB)} ${i4?'÷':'×'} ${g4?'22.4':'24'} = <b>${dsp(V)} dm³</b>`,t:'gas volume'});
+    const u5=E('units',5);
+    if(u5)ex='1 dm³ = 1000 cm³. A volume in dm³ must be multiplied by 1000 to give cm³.';
+    L.push({h:u5?`Volume in cm³ = <b>${dsp(V)} cm³</b>`:`Convert to cm³: ${dsp(V)} × 1000 = <b>${dsp(V*1000)} cm³</b>`,t:'unit conversion'});
+    final=u5?V:V*1000;unit='cm³';
+  }else{
+    const wB=E('mr',4)?mrWrongEl(B.f):null,pb=mrParts(B.f,wB),MrB=pb.val;
+    if(wB)ex=`Every atom in the formula counts. ${fx(B.f)} contains ${parse(B.f)[wB]} atoms of ${wB}, so the Ar of ${wB} (${AR[wB]}) must be multiplied by ${parse(B.f)[wB]}.`;
+    L.push({h:`Mr of ${fx(B.f)} = ${pb.txt} = <b>${dsp(MrB)}</b>`,t:'relative formula mass'});
+    const i5=E('invert',5),mass=i5?nB/MrB:nB*MrB;
+    if(i5)ex='Mass = moles × Mr. Moles are multiplied by the Mr to give a mass, not divided.';
+    L.push({h:`Mass of ${fx(B.f)} = n ${i5?'÷':'×'} Mr = ${dsp(nB)} ${i5?'÷':'×'} ${dsp(MrB)} = <b>${dsp(mass)} g</b>`,t:'mass'});
+    final=mass;unit='g';
+  }
+  return {lines:L,final,unit,ex};
+}
+function makeA(){
+  const P=paramsA();if(!P)return null;
+  const {R,iA,jB}=P,nr=R.R.length,A=R.R[iA],B=R.P[jB],gas=B.form==='gas',cA=R.coefs[iA],cB=R.coefs[nr+jB],opts=[];
+  if(mrWrongEl(A.f))opts.push({type:'mr',step:1});
+  if(!gas&&mrWrongEl(B.f))opts.push({type:'mr',step:4});
+  opts.push({type:'invert',step:2},{type:'invert',step:gas?4:5});
+  if(cA!==cB)opts.push({type:'ratio',step:3});
+  if(gas)opts.push({type:'gasvol',step:4},{type:'units',step:5});
+  const text=`${dsp(P.m)} g of ${A.name} (${fx(A.f)}) reacts completely. ${gas?`Calculate the volume, in cm³, of ${B.name} (${fx(B.f)}) formed at room temperature and pressure.`:`Calculate the mass, in g, of ${B.name} (${fx(B.f)}) formed.`} Any other reactant is in excess.`;
+  return finishSpot('A',P,lineA,opts,text,eqStr(R));
+}
+
+/* B: titration concentration */
+function makeB(){
+  const acid=rnd(['HCl','H2SO4','HNO3','H3PO4','CH3COOH']),base=rnd(['NaOH','KOH','Ca(OH)2']);
+  const R=build('neutralisation',{type:'hyd',acid,base});if(!R.valid)return null;
+  const ca=rnd([0.05,0.1,0.2,0.25,0.5]),Va=Math.round((15+Math.random()*17)*10)/10,P={R,ca,Va};
+  const cA=R.coefs[0],cB=R.coefs[1],opts=[{type:'units',step:1},{type:'units',step:3},{type:'invert',step:3}];
+  if(cA!==cB)opts.push({type:'ratio',step:2});
+  const text=`In a titration, ${dsp(Va)} cm³ of ${dsp(ca)} mol/dm³ ${R.R[0].name} (${fx(acid)}) exactly neutralises 25.0 cm³ of ${R.R[1].name} (${fx(base)}) of unknown concentration. Calculate the concentration of the ${R.R[1].name.replace(' solution','')}, in mol/dm³.`;
+  return finishSpot('B',P,lineB,opts,text,eqStr(R));
+}
+function lineB(P,err){
+  const {R,ca,Va}=P,cA=R.coefs[0],cB=R.coefs[1],acid=R.R[0],base=R.R[1];
+  const E=(t,s)=>!!err&&err.type===t&&err.step===s;let ex='';const L=[];
+  const u1=E('units',1),na=u1?ca*Va:ca*Va/1000;
+  if(u1)ex='In concentration calculations the volume must be in dm³. Divide a volume in cm³ by 1000 first.';
+  L.push({h:`n(${fx(acid.f)}) = c × V${u1?'':' ÷ 1000'} = ${dsp(ca)} × ${dsp(Va)}${u1?'':' ÷ 1000'} = <b>${dsp(na)} mol</b>`,t:'moles'});
+  const r2=E('ratio',2),nb=r2?na:na*cB/cA;
+  if(r2)ex=`The balanced equation shows ${cA} mol ${fx(acid.f)} reacts with ${cB} mol ${fx(base.f)}. The moles of ${fx(base.f)} are the moles of ${fx(acid.f)} × ${cB} ÷ ${cA}.`;
+  L.push({h:r2?`n(${fx(base.f)}) = n(${fx(acid.f)}) = <b>${dsp(nb)} mol</b>`:`From the equation, ${cA} mol ${fx(acid.f)} reacts with ${cB} mol ${fx(base.f)}. n(${fx(base.f)}) = ${dsp(na)} × ${cB} ÷ ${cA} = <b>${dsp(nb)} mol</b>`,t:'mole ratio'});
+  const u3=E('units',3),i3=E('invert',3),cb=u3?nb/25:i3?nb*0.025:nb/0.025;
+  if(u3)ex='The 25.0 cm³ must be converted to 0.0250 dm³ before dividing. Concentration = moles ÷ volume in dm³.';
+  if(i3)ex='Concentration = moles ÷ volume (in dm³). The moles are divided by the volume, not multiplied.';
+  L.push({h:u3?`c(${fx(base.f)}) = n ÷ V = ${dsp(nb)} ÷ 25.0 = <b>${dsp(cb)} mol/dm³</b>`:i3?`c(${fx(base.f)}) = n × (V ÷ 1000) = ${dsp(nb)} × (25.0 ÷ 1000) = <b>${dsp(cb)} mol/dm³</b>`:`c(${fx(base.f)}) = n ÷ (V ÷ 1000) = ${dsp(nb)} ÷ (25.0 ÷ 1000) = <b>${dsp(cb)} mol/dm³</b>`,t:'concentration'});
+  return {lines:L,final:cb,unit:'mol/dm³',ex};
+}
+
+/* C: limiting reagent */
+function paramsC(){
+  const cat=rnd(['synthesis','combustion','displacement','neutralisation']);
+  const R=build(cat,randPick(cat));if(!R.valid||R.R.length!==2)return null;
+  const jP=rnd(R.P.map((s,j)=>j));
+  for(let k=0;k<40;k++){
+    const Am=defaults(R),c=calc(R,Am);if(c.bad)continue;
+    const nA=c.n[0],nB=c.n[1],rA=c.ratio[0],rB=c.ratio[1];
+    const lim=rA<=rB?0:1,naive=nA<=nB?0:1;
+    if(lim===naive||Math.max(rA,rB)/Math.min(rA,rB)<1.25||Math.max(nA,nB)/Math.min(nA,nB)<1.15)continue;
+    return {R,A:Am,jP};
+  }
+  return null;
+}
+function lineC(P,err){
+  const {R,A:Am,jP}=P,nr=R.R.length,co=R.coefs,Pp=R.P[jP],cP=co[nr+jP];
+  const E=(t,s)=>!!err&&err.type===t&&err.step===s;let ex='';const L=[];
+  const m0=molLine(R.R[0],Am[0]),m1=molLine(R.R[1],Am[1]);
+  L.push({h:m0.h,t:'moles'});L.push({h:m1.h,t:'moles'});
+  const n=[m0.n,m1.n],r=[n[0]/co[0],n[1]/co[1]],good=r[0]<=r[1]?0:1,naive=n[0]<=n[1]?0:1;
+  const l3=E('limiting',3),lim=l3?naive:good,sp=R.R;
+  if(l3)ex='To compare reactants, divide each number of moles by its coefficient in the balanced equation. The reactant with the smaller (moles ÷ coefficient) runs out first. Comparing the raw moles ignores the ratio in the equation.';
+  L.push({h:l3?`${fx(sp[0].f)} has ${dsp(n[0])} mol and ${fx(sp[1].f)} has ${dsp(n[1])} mol. ${fx(sp[naive].f)} has fewer moles, so it is the <b>limiting reagent</b>.`:`n ÷ coefficient: ${fx(sp[0].f)} ${dsp(n[0])} ÷ ${co[0]} = ${dsp(r[0])}; ${fx(sp[1].f)} ${dsp(n[1])} ÷ ${co[1]} = ${dsp(r[1])}. ${fx(sp[good].f)} has the smaller value, so it is the <b>limiting reagent</b>.`,t:'limiting reagent'});
+  const r4=E('ratio',4),nP=r4?n[lim]:n[lim]*cP/co[lim];
+  if(r4)ex=`The balanced equation shows ${co[lim]} mol ${fx(sp[lim].f)} makes ${cP} mol ${fx(Pp.f)}. The moles of ${fx(Pp.f)} are the moles of ${fx(sp[lim].f)} × ${cP} ÷ ${co[lim]}.`;
+  L.push({h:r4?`n(${fx(Pp.f)}) = n(${fx(sp[lim].f)}) = <b>${dsp(nP)} mol</b>`:`n(${fx(Pp.f)}) = n(${fx(sp[lim].f)}) × ${cP} ÷ ${co[lim]} = ${dsp(n[lim])} × ${cP} ÷ ${co[lim]} = <b>${dsp(nP)} mol</b>`,t:'mole ratio'});
+  let final,unit;
+  if(Pp.form==='gas'){
+    const i5=E('invert',5);final=i5?nP/24:nP*24;unit='dm³';
+    if(i5)ex='Gas volume = moles × 24 dm³. More moles take up more space, so the moles are multiplied.';
+    L.push({h:`Volume of ${fx(Pp.f)} = n ${i5?'÷':'×'} 24 = ${dsp(nP)} ${i5?'÷':'×'} 24 = <b>${dsp(final)} dm³</b>`,t:'gas volume'});
+  }else{
+    const M=mr(Pp.f),i5=E('invert',5);final=i5?nP/M:nP*M;unit='g';
+    if(i5)ex='Mass = moles × Mr. Moles are multiplied by the Mr to give a mass, not divided.';
+    L.push({h:`Mass of ${fx(Pp.f)} = n ${i5?'÷':'×'} Mr = ${dsp(nP)} ${i5?'÷':'×'} ${dsp(M)} = <b>${dsp(final)} g</b>`,t:'mass'});
+  }
+  return {lines:L,final,unit,ex};
+}
+function makeC(){
+  const P=paramsC();if(!P)return null;
+  const {R,A:Am,jP}=P,nr=R.R.length,c=calc(R,Am),lim=c.ratio[0]<=c.ratio[1]?0:1,Pp=R.P[jP];
+  const opts=[{type:'limiting',step:3},{type:'invert',step:5}];
+  if(R.coefs[nr+jP]!==R.coefs[lim])opts.push({type:'ratio',step:4});
+  const text=`${amtText(R.R[0],Am[0])} reacts with ${amtText(R.R[1],Am[1])}. Calculate the ${Pp.form==='gas'?`volume, in dm³, of ${Pp.name} (${fx(Pp.f)}) formed at room temperature and pressure`:`mass, in g, of ${Pp.name} (${fx(Pp.f)}) formed`}.`;
+  return finishSpot('C',P,lineC,opts,text,eqStr(R));
+}
+
+/* D: percentage yield */
+function makeD(){
+  const cat=rnd(['synthesis','decomposition','combustion','displacement','neutralisation']);
+  const R=build(cat,randPick(cat));if(!R.valid)return null;
+  const js=R.P.map((s,j)=>j).filter(j=>R.P[j].form==='solid'||R.P[j].form==='liquid');if(!js.length)return null;
+  const jP=rnd(js),Pp=R.P[jP],M=mr(Pp.f),n=rnd([0.05,0.1,0.2,0.25,0.5,1]),theo=n*M,pct=rnd([42,48,55,62,68,74,81,88,93]);
+  if(theo<1||theo>80)return null;
+  const actual=parseFloat((theo*pct/100).toPrecision(3)),P={R,jP,n,actual};
+  const opts=[{type:'invert',step:2},{type:'yield',step:3}];
+  if(mrWrongEl(Pp.f))opts.push({type:'mr',step:1});
+  const text=`A reaction should make ${dsp(n)} mol of ${Pp.name} (${fx(Pp.f)}). A student collects ${dsp(actual)} g of it. Calculate the percentage yield.`;
+  return finishSpot('D',P,lineD,opts,text,eqStr(R));
+}
+function lineD(P,err){
+  const {R,jP,n,actual}=P,Pp=R.P[jP];
+  const E=(t,s)=>!!err&&err.type===t&&err.step===s;let ex='';const L=[];
+  const w=E('mr',1)?mrWrongEl(Pp.f):null,pm=mrParts(Pp.f,w),M=pm.val;
+  if(w)ex=`Every atom in the formula counts. ${fx(Pp.f)} contains ${parse(Pp.f)[w]} atoms of ${w}, so the Ar of ${w} (${AR[w]}) must be multiplied by ${parse(Pp.f)[w]}.`;
+  L.push({h:`Mr of ${fx(Pp.f)} = ${pm.txt} = <b>${dsp(M)}</b>`,t:'relative formula mass'});
+  const i2=E('invert',2),th=i2?n/M:n*M;
+  if(i2)ex='Mass = moles × Mr. The theoretical mass is found by multiplying the moles by the Mr, not dividing.';
+  L.push({h:`Theoretical yield = n ${i2?'÷':'×'} Mr = ${dsp(n)} ${i2?'÷':'×'} ${dsp(M)} = <b>${dsp(th)} g</b>`,t:'theoretical yield'});
+  const y3=E('yield',3),py=y3?th/actual*100:actual/th*100;
+  if(y3)ex='Percentage yield = actual yield ÷ theoretical yield × 100. The actual amount collected goes on top, so the answer is never above 100% for a normal experiment.';
+  L.push({h:y3?`% yield = theoretical ÷ actual × 100 = ${dsp(th)} ÷ ${dsp(actual)} × 100 = <b>${dsp(py)} %</b>`:`% yield = actual ÷ theoretical × 100 = ${dsp(actual)} ÷ ${dsp(th)} × 100 = <b>${dsp(py)} %</b>`,t:'percentage yield'});
+  return {lines:L,final:py,unit:'%',ex};
+}
+
+function finishSpot(kind,P,lineFn,opts,text,eq){
+  const types=[...new Set(opts.map(o=>o.type))];
+  let pool=types.filter(t=>t!==Z.last);if(!pool.length)pool=types;
+  const t=rnd(pool),err=rnd(opts.filter(o=>o.type===t));
+  const good=lineFn(P,null),bad=lineFn(P,err);
+  if(!(Math.abs(bad.final-good.final)>0.05*Math.abs(good.final)))return null;
+  if(!(good.final>0)||!isFinite(bad.final))return null;
+  return {kind,text,eq,lines:bad.lines,fix:good.lines[err.step-1],final:good.final,unit:good.unit,err,ex:bad.ex};
+}
+function newSpot(){
+  for(let k=0;k<600;k++){
+    const q=({A:makeA,B:makeB,C:makeC,D:makeD})[rnd(['A','A','B','C','C','D'])]();
+    if(!q)continue;
+    Z.q=q;Z.last=q.err.type;Z.sel=null;Z.type='';Z.ans='';Z.checked=false;Z.shown=false;Z.hint=false;Z.done=false;
+    const keys=Object.keys(ET).filter(k=>k!==q.err.type).sort(()=>Math.random()-0.5);
+    Z.order=keys.concat([q.err.type]).sort(()=>Math.random()-0.5).map(k=>({k,x:keys.indexOf(k)}));
+    return;
+  }
+}
+function spotMarks(){
+  const q=Z.q,x=parseFloat(String(Z.ans).replace(',','.'));
+  const line=Z.sel===null?null:Z.sel===q.err.step-1,type=Z.type===''?null:Z.type===q.err.type;
+  const ans=Z.ans===''||isNaN(x)?null:Math.abs(x-q.final)<=Math.abs(q.final)*0.02+1e-9;
+  return {line,type,ans,all:line===true&&type===true&&ans===true};
+}
+function spotOpts(){
+  const m=S.mode,q=Z.q,lim=m==='guided'?2:m==='standard'?4:99;
+  const others=Z.order.filter(o=>o.k!==q.err.type).slice(0,lim).map(o=>o.k);
+  return Z.order.filter(o=>o.k===q.err.type||others.includes(o.k)).map(o=>o.k);
+}
+function renderSpot(){
+  if(!Z.q)newSpot();
+  const q=Z.q,m=S.mode,w=m==='worked',inst=m==='guided',k=spotMarks();
+  const showRes=w||Z.shown||(Z.checked&&k.all)||(inst&&k.all);
+  const fb=(ok)=>(inst||Z.checked)&&ok!==null?(ok?'ok':'bad'):'';
+  const tags=inst||Z.hint||w;
+  const lines=q.lines.map((l,i)=>{
+    const isErr=i===q.err.step-1;
+    let cls=Z.sel===i?'sel':'';
+    if(Z.sel===i&&(inst||Z.checked))cls=isErr?'ok':'bad';
+    if(showRes&&isErr)cls='bad';
+    const inner=`<span class="sn">${i+1}</span><span class="st">${l.h}</span>${tags?`<span class="tp">${l.t}</span>`:''}`;
+    return w||showRes?`<div class="sline ${cls}">${inner}</div>`:`<button class="sline ${cls}" data-act="sline" data-i="${i}" aria-pressed="${Z.sel===i}">${inner}</button>`;
+  }).join('');
+  const opts=spotOpts().map(key=>{
+    let cls=Z.type===key?'sel':'';
+    if(Z.type===key&&(inst||Z.checked))cls=key===q.err.type?'ok':'bad';
+    if(showRes&&key===q.err.type)cls='ok';
+    return w||showRes?`<div class="sline ${cls}"><span class="st">${ET[key]}</span></div>`:`<button class="sline ${cls}" data-act="stype" data-k="${key}" aria-pressed="${Z.type===key}"><span class="st">${ET[key]}</span></button>`;
+  }).join('');
+  const ansCls=w||showRes?'shown':fb(k.ans);
+  const ansVal=w||Z.shown?dsp(q.final):Z.ans;
+  const res=showRes?`<div class="callout good"><b>Line ${q.err.step} should read:</b><div style="margin-top:4px">${q.fix.h}</div></div><div class="callout"><b>Why it is wrong.</b> ${q.ex}</div><div class="callout good">Correct answer: <b>${dsp(q.final)} ${q.unit}</b></div>`:'';
+  const marks=(Z.checked&&!inst&&!k.all)?`<div class="callout ${'warn'}"><b>Not all correct yet.</b> First wrong line: ${k.line?'✓':'✗'} · Type of mistake: ${k.type===null?'not chosen':k.type?'✓':'✗'} · Final answer: ${k.ans===null?'not entered':k.ans?'✓':'✗'}. Change your answers and check again.</div>`:'';
+  const instHint=inst&&k.line===false?`<div class="callout warn">Not that line. Read the labels on the right of each line and think about which step is most likely to hold an error.</div>`:'';
+  const steps=w?`<div class="callout"><b>Type of mistake:</b> ${ET[q.err.type]}. The mistake is on line ${q.err.step}. Lines after it carry the error forward.</div>`:`
+    <h3>1. Which is the first line with a mistake?</h3><div class="slines">${lines}</div>${instHint}
+    <h3>2. What kind of mistake is it?</h3><div class="slines">${opts}</div>
+    <h3>3. What should the final answer be?</h3>
+    <div class="chips" style="align-items:center"><input class="blank ${ansCls}" id="sans" data-sans type="text" inputmode="decimal" autocomplete="off" value="${esc(ansVal)}" aria-label="Corrected final answer"${showRes?' disabled':''}> <span>${q.unit}</span></div>`;
+  $('spotView').innerHTML=`<section class="stage"><header><h2>Spot the mistake</h2><p>${w?'Read each worked answer, find the mistake and see how to fix it.':'Each worked answer has exactly one mistake. Find the <b>first</b> wrong line. Later lines may carry the mistake forward but are otherwise correct.'}</p></header>
+  <div class="q"><div class="text">${q.text}</div><div class="eq chem"><span>${q.eq}</span></div>
+  ${w?`<div class="slines">${lines}</div>${steps}`:steps}${showRes?'':''}${w||showRes?'':''}
+  ${w?res:res}${marks}
+  <div class="chips">${w?'':`${m!=='guided'&&!showRes?'<button class="btn teal" data-act="scheck">Check</button>':''}${m==='standard'&&!Z.hint&&!showRes?'<button class="btn" data-act="shint">Show hints</button>':''}${showRes?'':'<button class="btn" data-act="sshow">Show answer</button>'}`}<button class="btn pri" data-act="snew">New problem</button></div></div>
+  <div class="score">${Z.solved} solved without looking at the answer</div></section>`;
+}
+function spotSolved(){const k=spotMarks();if(k.all&&!Z.done&&!Z.shown){Z.done=true;Z.solved++;}}
+
 /* ---------- events ---------- */
 function applyShow(ids){
   ids.forEach(id=>{
@@ -913,6 +1164,12 @@ document.addEventListener('click',e=>{
   else if(a==='bcheck'){B.checked=true;B.n++;if(balInfoB().every(x=>x.ok)&&B.co.reduce(gcd)===1&&!B.done&&!B.shown){B.ok++;B.done=true;}renderBal();}
   else if(a==='bhint'){B.hint=true;renderBal();}
   else if(a==='bshow'){B.co=B.R.coefs.slice();B.shown=true;renderBal();}
+  else if(a==='sline'){Z.sel=+d.i;if(S.mode!=='guided')Z.checked=false;else spotSolved();renderSpot();}
+  else if(a==='stype'){Z.type=d.k;if(S.mode!=='guided')Z.checked=false;else spotSolved();renderSpot();}
+  else if(a==='scheck'){Z.checked=true;spotSolved();renderSpot();}
+  else if(a==='shint'){Z.hint=true;renderSpot();}
+  else if(a==='sshow'){Z.shown=true;renderSpot();}
+  else if(a==='snew'){newSpot();renderSpot();}
   else if(a==='ykind'){Y.kind=d.k;Y.ok=0;Y.n=0;newY();renderYield();}
   else if(a==='ynew'){newY();renderYield();}
   else if(a==='yhint'){Y.hint=true;renderYield();}
@@ -938,6 +1195,10 @@ document.addEventListener('input',e=>{
   if(el.dataset.f!==undefined&&el.tagName==='INPUT')onField(el);
   else if(el.dataset.amt!==undefined){const i=+el.dataset.amt,v=parseFloat(el.value);if(!isNaN(v)&&v>=0){S.A[i][el.dataset.k]=v;$('vis'+i).innerHTML=visHTML(i);clearCalc();}}
   else if(el.dataset.tin!==undefined){T.val=el.value;}
+  else if(el.dataset.sans!==undefined){
+    Z.ans=el.value;if(S.mode!=='guided')Z.checked=false;
+    if(S.mode==='guided'){const k=spotMarks();el.classList.remove('ok','bad');if(k.ans!==null)el.classList.add(k.ans?'ok':'bad');if(k.all){spotSolved();renderSpot();}}
+  }
   else if(el.dataset.yin!==undefined){Y.vals[+el.dataset.yin]=el.value;Y.checked=false;el.classList.remove('ok','bad');}
 });
 document.addEventListener('change',e=>{
