@@ -238,7 +238,7 @@ function setReaction(){
   renderAll();
 }
 function setMode(m){
-  S.mode=m;if(typeof Z!=='undefined'&&Z.q){Z.sel=null;Z.type='';Z.ans='';Z.checked=false;Z.shown=false;Z.hint=false;Z.done=false;}S.vals={};S.checked={};S.shown={};S.hintOpen={};S.okf={};S.reveal=0;
+  S.mode=m;lsSet('moleLabMode',m);if($('levelUp'))$('levelUp').hidden=true;P.streak=0;pRender();if(typeof Z!=='undefined'&&Z.q){Z.sel=null;Z.type='';Z.ans='';Z.checked=false;Z.shown=false;Z.hint=false;Z.done=false;}S.vals={};S.checked={};S.shown={};S.hintOpen={};S.okf={};S.reveal=0;
   if(S.R&&S.R.valid)S.coefs=m==='worked'?S.R.coefs.slice():allSp().map(()=>1);
   renderAll();
 }
@@ -303,8 +303,8 @@ const simplest=()=>S.coefs.reduce((a,b)=>gcd(a,b))===1;
 function renderModes(){
   $('modeSeg').innerHTML=MODES.map(([k,l])=>`<button data-act="mode" data-m="${k}" aria-pressed="${S.mode===k}">${l}</button>`).join('');
   $('modeNote').textContent=MODES.find(m=>m[0]===S.mode)[2];
-  $('tabs').innerHTML=[['lab','Reaction lab'],['tool','Mole practice'],['bal','Balancing practice'],['yield','% yield practice'],['spot','Spot the mistake']].map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('');
-  $('labView').hidden=S.tab!=='lab';$('toolView').hidden=S.tab!=='tool';$('balView').hidden=S.tab!=='bal';$('yView').hidden=S.tab!=='yield';$('spotView').hidden=S.tab!=='spot';
+  $('tabs').innerHTML=TABS.map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('');
+  $('labView').hidden=S.tab!=='lab';$('toolView').hidden=S.tab!=='tool';$('balView').hidden=S.tab!=='bal';$('yView').hidden=S.tab!=='yield';$('spotView').hidden=S.tab!=='spot';$('testView').hidden=S.tab!=='test';
 }
 const STEPS=['Reaction','Formulae','Balance','Experiment','Calculate'];
 function renderRail(){
@@ -342,9 +342,9 @@ function renderStage(){
 }
 function renderAll(){
   renderModes();
-  if(S.tab==='lab'){renderRail();renderEq();renderStage();}else if(S.tab==='tool')renderTool();else if(S.tab==='bal')renderBal();else if(S.tab==='yield')renderYield();else renderSpot();
+  if(S.tab==='lab'){renderRail();renderEq();renderStage();}else if(S.tab==='tool')renderTool();else if(S.tab==='bal')renderBal();else if(S.tab==='yield')renderYield();else if(S.tab==='spot')renderSpot();else renderTest();
 }
-function go(n){S.step=n;renderRail();renderEq();renderStage();$('rail').scrollIntoView({block:'start',behavior:'smooth'});}
+function go(n){S.step=n;renderRail();renderEq();renderStage();$('rail').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});}
 
 /* ---------- step 1: choose ---------- */
 function stage1(){
@@ -728,7 +728,7 @@ function renderTool(){
   const m=S.mode,q=T.q;
   const kinds=[['mass','Mass and Mr'],['conc','Concentration and volume'],['gas','Gas volume']];
   const showTri=m==='worked'||m==='guided'||T.hint;
-  $('toolView').innerHTML=`<section class="stage"><header><h2>Mole practice</h2><p>Three routes to the same unit. Pick one and work through random questions. Answers within 2% are accepted.</p></header>
+  $('toolView').innerHTML=`<section class="stage"><header><h2>Mole calculations</h2><p>Three routes to the same unit. Pick one and work through random questions. Answers within 2% are accepted.</p></header>
   <div class="chips" role="group" aria-label="Calculation type">${kinds.map(([k,l])=>`<button class="chip" data-act="tkind" data-k="${k}" aria-pressed="${T.kind===k}">${l}</button>`).join('')}</div>
   <div class="q"><div class="text">${q.t}</div>
    ${showTri?`<div class="callout"><span class="tri"><span>${TRI[T.kind]}</span></span></div>`:''}
@@ -736,7 +736,7 @@ function renderTool(){
     <button class="btn teal" data-act="tcheck">Check</button>
     ${m==='standard'&&!T.hint?'<button class="btn" data-act="thint">Hint</button>':''}
     <button class="btn" data-act="tshow">Show working</button><button class="btn pri" data-act="tnew">New question</button></div>
-   <div id="tres">${toolRes()}</div></div>
+   <div id="tres" aria-live="polite">${toolRes()}</div></div>
   <div class="score">${T.ok} correct out of ${T.n} attempts</div></section>`;
 }
 function toolRes(){
@@ -747,8 +747,8 @@ function toolRes(){
 function toolCheck(){
   const x=parseFloat(String(T.val).replace(',','.')),q=T.q;
   if(isNaN(x)){T.res='<div class="callout warn">Type a number first.</div>';return;}
-  T.n++;
-  if(Math.abs(x-q.a)<=Math.abs(q.a)*0.02+1e-9){if(!T.done)T.ok++;T.done=true;T.res='<div class="callout good"><b>Correct.</b></div>';}
+  T.n++;if(!(Math.abs(x-q.a)<=Math.abs(q.a)*0.02+1e-9))miss();
+  if(Math.abs(x-q.a)<=Math.abs(q.a)*0.02+1e-9){if(!T.done){T.ok++;win();}T.done=true;T.res='<div class="callout good"><b>Correct.</b></div>';}
   else T.res=`<div class="callout bad">Not quite. ${S.mode==='challenge'?'Try again.':'Check your formula and your units, then try again.'}</div>`;
 }
 
@@ -791,7 +791,7 @@ function renderBal(){
   const tbl=vis?`<div class="grid"><table><thead><tr><th class="rl">Atoms of</th><th>Left</th><th>Right</th><th></th></tr></thead><tbody>${info.map(x=>`<tr><td class="rl"><b>${x.e}</b></td><td><span class="given">${x.l}</span></td><td><span class="given">${x.r}</span></td><td>${x.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table></div>`:'';
   const method=w?`<div class="callout"><b>Method.</b> Count the atoms of each element on both sides. Fix one element at a time by changing a coefficient, starting with an element that appears in only one substance on each side. Re-count after every change. Finish by checking the numbers are the smallest whole numbers.</div>`:'';
   const btns=w?'':`<div class="chips"><button class="btn teal" data-act="bcheck">Check</button>${m==='standard'&&!B.hint?'<button class="btn" data-act="bhint">Count the atoms</button>':''}<button class="btn" data-act="bshow">Show answer</button></div>`;
-  $('balView').innerHTML=`<section class="stage"><header><h2>Balancing practice</h2><p>Set the coefficient in front of each formula so both sides have the same atoms. Use the type and level buttons to choose what you practise.</p></header>
+  $('balView').innerHTML=`<section class="stage"><header><h2>Balancing equations</h2><p>Set the coefficient in front of each formula so both sides have the same atoms. Use the type and level buttons to choose what you practise.</p></header>
   <div class="chips" role="group" aria-label="Reaction type">${BF.map(([k,l])=>`<button class="chip" data-act="bfilter" data-k="${k}" aria-pressed="${B.filter===k}">${l}</button>`).join('')}</div>
   <div class="chips" role="group" aria-label="Level">${BL.map(([k,l])=>`<button class="chip" data-act="blevel" data-k="${k}" aria-pressed="${B.level===k}">${l}</button>`).join('')}</div>
   <div class="callout"><b>${CATS[R.cat].label}:</b> ${R.R.map(s=>s.name).join(' + ')} → ${R.P.map(s=>s.name).join(' + ')}</div>
@@ -862,7 +862,7 @@ function renderYield(){
   <div class="chips" role="group" aria-label="Question type"><button class="chip" data-act="ykind" data-k="simple" aria-pressed="${Y.kind==='simple'}">Quick calculations</button><button class="chip" data-act="ykind" data-k="eq" aria-pressed="${Y.kind==='eq'}">With an equation</button></div>
   <div class="q">${q.eq?`<div class="eq chem"><span>${q.eq}</span></div>`:''}<div class="text">${q.t}</div>${formula}<div class="rows">${rows}</div>${simpleW}
    <div class="chips">${w?'':'<button class="btn teal" data-act="ycheck">Check</button>'}${m==='standard'&&!Y.hint&&!w?'<button class="btn" data-act="yhint">Hint</button>':''}${w?'':'<button class="btn" data-act="yshow">Show working</button>'}<button class="btn pri" data-act="ynew">New question</button></div>
-   <div id="yres"></div></div>
+   <div id="yres" aria-live="polite"></div></div>
   <div class="score">${Y.ok} correct out of ${Y.n} checks</div></section>`;
 }
 
@@ -1115,7 +1115,78 @@ function renderSpot(){
   <div class="chips">${w?'':`${m!=='guided'&&!showRes?'<button class="btn teal" data-act="scheck">Check</button>':''}${m==='standard'&&!Z.hint&&!showRes?'<button class="btn" data-act="shint">Show hints</button>':''}${showRes?'':'<button class="btn" data-act="sshow">Show answer</button>'}`}<button class="btn pri" data-act="snew">New problem</button></div></div>
   <div class="score">${Z.solved} solved without looking at the answer</div></section>`;
 }
-function spotSolved(){const k=spotMarks();if(k.all&&!Z.done&&!Z.shown){Z.done=true;Z.solved++;}}
+function spotSolved(){const k=spotMarks();if(k.all&&!Z.done&&!Z.shown){Z.done=true;Z.solved++;win();}}
+
+
+/* ---------- streak, saved settings ---------- */
+const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+const TABS=[['lab','Reaction lab'],['bal','Balancing'],['tool','Mole calculations'],['yield','% yield'],['spot','Spot the mistake'],['test','Test']];
+const P={streak:0,best:0};
+function pRender(){const el=$('streak');if(!el)return;el.hidden=P.streak<2;el.textContent='Streak: '+P.streak+' in a row';}
+function win(){
+  P.streak++;if(P.streak>P.best)P.best=P.streak;pRender();
+  if(P.streak%5===0){
+    const next={worked:'guided',guided:'standard',standard:'challenge'}[S.mode],lu=$('levelUp');if(!lu)return;
+    const lab=k=>MODES.find(m=>m[0]===k)[1];
+    lu.hidden=false;
+    lu.innerHTML=next?`<b>${P.streak} in a row.</b> <span>Ready for ${lab(next)} mode?</span> <button class="btn sm pri" data-act="levelup" data-m="${next}">Switch to ${lab(next)}</button> <button class="btn sm" data-act="lvdismiss">Not yet</button>`:`<b>${P.streak} in a row on Challenge.</b> <span>Try the Test tab to see how you do under exam conditions.</span> <button class="btn sm" data-act="lvdismiss">Close</button>`;
+  }
+}
+function miss(){if(P.streak){P.streak=0;pRender();}}
+
+/* ---------- test mode ---------- */
+const X={phase:'intro',qs:[],i:0,ans:[],val:''};
+function testBuild(){
+  const sT=Object.assign({},T),sY=Object.assign({},Y),qs=[];
+  const names={mass:'Mass and Mr',conc:'Concentration',gas:'Gas volume'};
+  ['mass','conc','gas','mass','conc','gas','mass','yield','yield','yield'].forEach(k=>{
+    if(k==='yield'){Y.kind='simple';newY();const b=Y.q.b[0];qs.push({t:Y.q.t,a:b.a,u:b.u,w:Y.q.w,tag:'% yield'});}
+    else{T.kind=k;newQ();qs.push({t:T.q.t,a:T.q.a,u:T.q.u,w:T.q.w,tag:names[k]});}
+  });
+  Object.assign(T,sT);Object.assign(Y,sY);
+  for(let i=qs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[qs[i],qs[j]]=[qs[j],qs[i]];}
+  return qs;
+}
+function testStart(){X.qs=testBuild();X.i=0;X.ans=[];X.val='';X.phase='q';renderTest();}
+function testNext(){
+  if(X.phase!=='q')return;
+  X.ans[X.i]=X.val;X.val='';X.i++;
+  if(X.i>=X.qs.length)X.phase='done';
+  renderTest();
+}
+const xRight=i=>{const x=parseFloat(String(X.ans[i]||'').replace(',','.')),a=X.qs[i].a;return !isNaN(x)&&Math.abs(x-a)<=Math.abs(a)*0.02+1e-9;};
+function renderTest(){
+  const v=$('testView');
+  if(X.phase==='intro'){
+    v.innerHTML=`<section class="stage"><header><h2>Test</h2><p>Ten questions mixed from mole calculations and percentage yield. There are no hints and no marks until the end. Answers within 2% count as correct. You can use the calculator and the periodic table.</p></header>
+    <div class="callout">Your difficulty mode does not change the test. Every student gets the same conditions.</div>
+    <div><button class="btn pri" data-act="xstart">Start the test</button></div></section>`;
+  }else if(X.phase==='q'){
+    const q=X.qs[X.i],last=X.i===X.qs.length-1;
+    v.innerHTML=`<section class="stage"><header><h2>Question ${X.i+1} of ${X.qs.length}</h2></header>
+    <div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${X.qs.length}" aria-valuenow="${X.i}" aria-label="Test progress"><i style="width:${X.i/X.qs.length*100}%"></i></div>
+    <div class="q"><div class="text">${q.t}</div>
+    <div class="chips" style="align-items:center"><input class="blank" id="xin" data-xin type="text" inputmode="decimal" autocomplete="off" value="${esc(X.val)}" aria-label="Your answer"> <span>${q.u}</span>
+    <button class="btn pri" data-act="xnext">${last?'Finish test':'Next question'}</button></div>
+    <div class="score">Leave it blank to skip. You cannot go back.</div></div></section>`;
+    const inpEl=$('xin');if(inpEl)inpEl.focus();
+  }else{
+    const marks=X.qs.map((q,i)=>xRight(i)),sc=marks.filter(Boolean).length,n=X.qs.length;
+    const msg=sc>=9?'Excellent. You are ready for the real thing.':sc>=7?'Strong. Check the questions you missed below.':sc>=5?'Getting there. Work through the topics listed below.':'Keep practising. Start with Guided mode and the topics below.';
+    const weak=[...new Set(X.qs.filter((q,i)=>!marks[i]).map(q=>q.tag))];
+    const tabFor={'Mass and Mr':'tool','Concentration':'tool','Gas volume':'tool','% yield':'yield'};
+    const rows=X.qs.map((q,i)=>{
+      const given=String(X.ans[i]||'').trim();
+      return `<div class="rv ${marks[i]?'ok':'bad'}"><span class="mk" aria-hidden="true">${marks[i]?'\u2713':'\u2717'}</span><div class="rt"><span><b>${i+1}.</b> ${q.t}</span><small>${marks[i]?'Correct':'Incorrect'}. You wrote: ${given?esc(given)+' '+q.u:'(left blank)'} \u00b7 Answer: ${fmt(q.a)} ${q.u}</small><details><summary>Show working</summary><div style="margin-top:6px">${q.w}</div></details></div></div>`;
+    }).join('');
+    v.innerHTML=`<section class="stage"><header><h2>Test complete</h2></header>
+    <div class="big-score">${sc} / ${n}</div><p>${msg}</p>
+    ${weak.length?`<div class="callout warn"><b>Revise:</b> ${weak.join(', ')}. <button class="btn sm" data-act="tab" data-t="${tabFor[weak[0]]}">Practise ${weak[0]}</button></div>`:'<div class="callout good"><b>Full marks.</b> Try the Challenge mode in Spot the mistake.</div>'}
+    <div class="rows">${rows}</div>
+    <div><button class="btn pri" data-act="xnew">Take a new test</button></div></section>`;
+  }
+}
 
 /* ---------- events ---------- */
 function applyShow(ids){
@@ -1131,7 +1202,11 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]');if(!t)return;
   const d=t.dataset,a=d.act;
   if(a==='mode')setMode(d.m);
-  else if(a==='tab'){S.tab=d.t;renderAll();}
+  else if(a==='tab'){S.tab=d.t;lsSet('moleLabTab',d.t);renderAll();}
+  else if(a==='levelup'){setMode(d.m);}
+  else if(a==='lvdismiss'){$('levelUp').hidden=true;}
+  else if(a==='xstart'||a==='xnew'){testStart();}
+  else if(a==='xnext'){testNext();}
   else if(a==='cat'){S.cat=d.c;setReaction();}
   else if(a==='random'){
     for(let k=0;k<40;k++){const p={};if(S.cat==='neutralisation'){p.type=rnd(Object.keys(NTYPE))[0]?rnd(Object.keys(NTYPE)):'hyd';p.acid=rnd(OPTS.neutralisation[0].list)[0];p.base=rnd(NBASE[p.type]);}else OPTS[S.cat].forEach(o=>{p[o.k]=rnd(o.list)[0];});S.pick[S.cat]=p;if(build(S.cat,p).valid)break;}
@@ -1161,12 +1236,12 @@ document.addEventListener('click',e=>{
   else if(a==='blevel'){B.level=d.k;newBal();renderBal();}
   else if(a==='bnew'){newBal();renderBal();}
   else if(a==='bco'){const i=+d.i;B.co[i]=Math.max(1,Math.min(30,B.co[i]+(+d.d)));B.checked=false;renderBal();}
-  else if(a==='bcheck'){B.checked=true;B.n++;if(balInfoB().every(x=>x.ok)&&B.co.reduce(gcd)===1&&!B.done&&!B.shown){B.ok++;B.done=true;}renderBal();}
+  else if(a==='bcheck'){B.checked=true;B.n++;const okB=balInfoB().every(x=>x.ok)&&B.co.reduce(gcd)===1;if(!okB)miss();if(okB&&!B.done&&!B.shown){B.ok++;B.done=true;win();}renderBal();}
   else if(a==='bhint'){B.hint=true;renderBal();}
   else if(a==='bshow'){B.co=B.R.coefs.slice();B.shown=true;renderBal();}
   else if(a==='sline'){Z.sel=+d.i;if(S.mode!=='guided')Z.checked=false;else spotSolved();renderSpot();}
   else if(a==='stype'){Z.type=d.k;if(S.mode!=='guided')Z.checked=false;else spotSolved();renderSpot();}
-  else if(a==='scheck'){Z.checked=true;spotSolved();renderSpot();}
+  else if(a==='scheck'){Z.checked=true;if(!spotMarks().all)miss();spotSolved();renderSpot();}
   else if(a==='shint'){Z.hint=true;renderSpot();}
   else if(a==='sshow'){Z.shown=true;renderSpot();}
   else if(a==='snew'){newSpot();renderSpot();}
@@ -1177,7 +1252,7 @@ document.addEventListener('click',e=>{
   else if(a==='ycheck'){
     const all=Y.q.b.every((b,i)=>yRight(i)===true);
     if(Y.q.b.some((b,i)=>yRight(i)===null)){Y.checked=true;renderYield();$('yres').innerHTML='<div class="callout warn">Fill in every blank first.</div>';}
-    else{Y.checked=true;Y.n++;if(all&&!Y.done&&!Y.shown){Y.ok++;Y.done=true;}renderYield();$('yres').innerHTML=all?'<div class="callout good"><b>Correct.</b></div>':'<div class="callout bad">Not quite. Check each step, your units and your rounding.</div>';}
+    else{Y.checked=true;Y.n++;if(!all)miss();if(all&&!Y.done&&!Y.shown){Y.ok++;Y.done=true;win();}renderYield();$('yres').innerHTML=all?'<div class="callout good"><b>Correct.</b></div>':'<div class="callout bad">Not quite. Check each step, your units and your rounding.</div>';}
   }
   else if(a==='tkind'){T.kind=d.k;newQ();T.ok=0;T.n=0;renderTool();}
   else if(a==='tnew'){newQ();renderTool();}
@@ -1195,6 +1270,7 @@ document.addEventListener('input',e=>{
   if(el.dataset.f!==undefined&&el.tagName==='INPUT')onField(el);
   else if(el.dataset.amt!==undefined){const i=+el.dataset.amt,v=parseFloat(el.value);if(!isNaN(v)&&v>=0){S.A[i][el.dataset.k]=v;$('vis'+i).innerHTML=visHTML(i);clearCalc();}}
   else if(el.dataset.tin!==undefined){T.val=el.value;}
+  else if(el.dataset.xin!==undefined){X.val=el.value;}
   else if(el.dataset.sans!==undefined){
     Z.ans=el.value;if(S.mode!=='guided')Z.checked=false;
     if(S.mode==='guided'){const k=spotMarks();el.classList.remove('ok','bad');if(k.ans!==null)el.classList.add(k.ans?'ok':'bad');if(k.all){spotSolved();renderSpot();}}
@@ -1216,6 +1292,7 @@ document.addEventListener('pointerdown',e=>{
 });
 ['pointerup','pointercancel','pointerleave','blur'].forEach(ev=>document.addEventListener(ev,()=>{clearInterval(holdT);holdT=null;},true));
 document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.id==='xin'){e.preventDefault();testNext();return;}
   if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-hold]')){e.preventDefault();adj(+e.target.dataset.i,e.target.dataset.k,+e.target.dataset.d);}
   if(e.key==='Enter'&&e.target.id==='tin'){toolCheck();$('tres').innerHTML=toolRes();const sc=document.querySelector('#toolView .score');if(sc)sc.textContent=`${T.ok} correct out of ${T.n} attempts`;}
 });
@@ -1480,3 +1557,11 @@ document.addEventListener('keydown',e=>{
 })();
 
 setReaction();
+{const sm=lsGet('moleLabMode'),st=lsGet('moleLabTab');if(sm&&sm!==S.mode&&MODES.some(m=>m[0]===sm))setMode(sm);if(st&&TABS.some(t=>t[0]===st)&&st!==S.tab){S.tab=st;renderAll();}}
+
+(function(){
+  const root=document.documentElement,b=document.getElementById('themeBtn');
+  const set=(m)=>{if(m==='light')root.setAttribute('data-theme','light');else root.removeAttribute('data-theme');b.textContent=m==='light'?'Dark mode':'Light mode';try{localStorage.setItem('mole-theme',m);}catch(e){}};
+  set(root.getAttribute('data-theme')==='light'?'light':'dark');
+  b.addEventListener('click',()=>set(root.getAttribute('data-theme')==='light'?'dark':'light'));
+})();

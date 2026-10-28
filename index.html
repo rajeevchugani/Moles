@@ -7,15 +7,17 @@
 <meta name="description" content="Interactive IGCSE mole calculation revision: reactions, balancing, virtual practicals, titration and limiting reagents.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<script id="early">try{var t=localStorage.getItem("mole-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>Mole Lab</h1><p>IGCSE chemistry: from word equation to limiting reagent</p></div>
-    <div class="ctl"><div class="seg" id="modeSeg" role="group" aria-label="Difficulty mode"></div><button class="btn" id="calcBtn" aria-pressed="false" aria-controls="calc">Calculator: off</button><button class="btn" id="ptBtn" aria-pressed="false" aria-controls="ptp">Periodic table: off</button></div>
+    <div class="brand"><a class="hublink" href="https://sites.google.com/cis.edu.hk/y11science" target="_blank" rel="noopener">← Science Revision Hub</a><div class="eyebrow"><i></i>IGCSE Chemistry revision</div><h1><span>Mole</span> <em>Lab</em></h1><p>IGCSE chemistry: from word equation to limiting reagent</p></div>
+    <div class="ctl"><div class="seg" id="modeSeg" role="group" aria-label="Difficulty mode"></div><button class="btn" id="calcBtn" aria-pressed="false" aria-controls="calc">Calculator: off</button><button class="btn themeBtn" id="themeBtn" aria-label="Switch between dark and light theme">Light mode</button><button class="btn" id="ptBtn" aria-pressed="false" aria-controls="ptp">Periodic table: off</button></div>
   </header>
-  <div class="modeNote" id="modeNote"></div>
+  <div class="notes"><div class="modeNote" id="modeNote"></div><span class="streak" id="streak" hidden role="status"></span></div>
+  <div class="callout good levelup" id="levelUp" hidden role="status"></div>
   <nav class="tabs" id="tabs" aria-label="Sections"></nav>
   <div id="labView">
     <ol class="rail" id="rail"></ol>
@@ -26,6 +28,7 @@
   <div id="balView" hidden></div>
   <div id="yView" hidden></div>
   <div id="spotView" hidden></div>
+  <div id="testView" hidden></div>
 </div>
 
 <div class="calc" id="calc" hidden role="dialog" aria-label="Calculator">
