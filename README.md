@@ -24,8 +24,10 @@ Everything runs in the browser. Nothing is saved or sent anywhere.
 
 ### Extras
 
+- **Grouped navigation**: tabs are grouped as 1 Learn, 2 Practise, 3 Test yourself, with a tick on tabs the student has visited and a "Next" button under each tab. A dismissible "How this works" panel appears on the first visit.
 - **Streak**: a counter of correct answers in a row. After every five, students are offered the next difficulty mode.
-- **Light / Dark switch** in the header. The choice, the difficulty mode and the last tab are remembered in each student's browser.
+- **Calculator and Periodic table** buttons float at the bottom right of the screen. Each opens a draggable panel.
+- **Light / Dark switch** (☀ Light mode / ☾ Dark mode) at the top right, beside the Hub link; on phones it sits under the link. Dark is the default. The choice is saved under the localStorage key "mole-theme". The choice, the difficulty mode and the last tab are remembered in each student's browser.
 - **Link back** to the Science Revision Hub at the top of the page (edit the `hublink` address in `index.html` if the hub moves).
 
 ### Difficulty modes (top of the page)
@@ -80,7 +82,7 @@ Opening `index.html` directly by double-click also works for most features.
 
 ## Notes
 
-- The header has on/off buttons for a floating calculator and a periodic table. Both can be dragged
+- The floating buttons at the bottom right open a calculator and a periodic table. Both can be dragged
   and minimised. The periodic table has Small/Medium/Large sizes, a Fade option and a Compact mode (search box only). It shows atomic number, symbol and relative atomic mass, with search.
 
 - Fonts (Bricolage Grotesque, DM Sans, DM Mono) load from Google Fonts. If the

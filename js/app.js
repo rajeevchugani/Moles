@@ -303,7 +303,11 @@ const simplest=()=>S.coefs.reduce((a,b)=>gcd(a,b))===1;
 function renderModes(){
   $('modeSeg').innerHTML=MODES.map(([k,l])=>`<button data-act="mode" data-m="${k}" aria-pressed="${S.mode===k}">${l}</button>`).join('');
   $('modeNote').textContent=MODES.find(m=>m[0]===S.mode)[2];
-  $('tabs').innerHTML=TABS.map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('');
+  if(!VIS.includes(S.tab)){VIS.push(S.tab);lsSet('moleLabVisited',JSON.stringify(VIS));}
+  const lab=k=>TABS.find(t=>t[0]===k)[1];
+  $('tabs').innerHTML=TGROUPS.map((g,i)=>`<div class="ng g${i+1}"><span class="gl">${g[0]}</span><div class="gb">${g[1].map(k=>`<button data-act="tab" data-t="${k}" aria-pressed="${S.tab===k}" class="${VIS.includes(k)?'vis':''}">${lab(k)}</button>`).join('')}</div></div>`).join('');
+  const ti=TABS.findIndex(t=>t[0]===S.tab),nx=TABS[ti+1];
+  $('nextRow').hidden=!nx;if(nx)$('nextRow').innerHTML=`<button class="btn" data-act="tab" data-t="${nx[0]}">Next: ${nx[1]} \u2192</button>`;
   $('labView').hidden=S.tab!=='lab';$('toolView').hidden=S.tab!=='tool';$('balView').hidden=S.tab!=='bal';$('yView').hidden=S.tab!=='yield';$('spotView').hidden=S.tab!=='spot';$('testView').hidden=S.tab!=='test';
 }
 const STEPS=['Reaction','Formulae','Balance','Experiment','Calculate'];
@@ -1122,6 +1126,8 @@ function spotSolved(){const k=spotMarks();if(k.all&&!Z.done&&!Z.shown){Z.done=tr
 const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
 const TABS=[['lab','Reaction lab'],['bal','Balancing'],['tool','Mole calculations'],['yield','% yield'],['spot','Spot the mistake'],['test','Test']];
+const TGROUPS=[['1 \u00b7 Learn',['lab','bal']],['2 \u00b7 Practise',['tool','yield','spot']],['3 \u00b7 Test yourself',['test']]];
+let VIS=[];try{VIS=JSON.parse(lsGet('moleLabVisited')||'[]');}catch(e){VIS=[];}
 const P={streak:0,best:0};
 function pRender(){const el=$('streak');if(!el)return;el.hidden=P.streak<2;el.textContent='Streak: '+P.streak+' in a row';}
 function win(){
@@ -1202,7 +1208,8 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]');if(!t)return;
   const d=t.dataset,a=d.act;
   if(a==='mode')setMode(d.m);
-  else if(a==='tab'){S.tab=d.t;lsSet('moleLabTab',d.t);renderAll();}
+  else if(a==='tab'){S.tab=d.t;lsSet('moleLabTab',d.t);renderAll();const tb=$('tabs').getBoundingClientRect();if(tb.top<0)$('tabs').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});}
+  else if(a==='howclose'){}
   else if(a==='levelup'){setMode(d.m);}
   else if(a==='lvdismiss'){$('levelUp').hidden=true;}
   else if(a==='xstart'||a==='xnew'){testStart();}
@@ -1340,11 +1347,11 @@ document.addEventListener('keydown',e=>{
     box.style.left=pos.x+'px';box.style.top=pos.y+'px';
   }
   function setOn(on){
-    box.hidden=!on;btn.setAttribute('aria-pressed',on);btn.textContent='Calculator: '+(on?'on':'off');
+    box.hidden=!on;btn.setAttribute('aria-pressed',on);
     btn.className=on?'btn teal':'btn';store.set('moleLabCalc',on?'1':'0');
     if(on){
       if(!pos){let sx=null;try{sx=JSON.parse(store.get('moleLabCalcPos'));}catch(e){}
-        pos=sx&&typeof sx.x==='number'?sx:{x:window.innerWidth-box.offsetWidth-16,y:window.innerHeight-box.offsetHeight-16};}
+        pos=sx&&typeof sx.x==='number'?sx:{x:window.innerWidth-box.offsetWidth-16,y:window.innerHeight-box.offsetHeight-76};}
       clamp();
     }
   }
@@ -1534,7 +1541,7 @@ document.addEventListener('keydown',e=>{
     box.style.left=pos.x+'px';box.style.top=pos.y+'px';
   }
   function setOn(on){
-    box.hidden=!on;btn.setAttribute('aria-pressed',on);btn.textContent='Periodic table: '+(on?'on':'off');
+    box.hidden=!on;btn.setAttribute('aria-pressed',on);
     btn.className=on?'btn teal':'btn';store.set('moleLabPT',on?'1':'0');
     if(on){
       if(!view.innerHTML)render();renderPicks();
@@ -1557,11 +1564,12 @@ document.addEventListener('keydown',e=>{
 })();
 
 setReaction();
+{const hw=$('how');if(lsGet('moleLabHow')!=='1')hw.hidden=false;$('howClose').addEventListener('click',()=>{hw.hidden=true;lsSet('moleLabHow','1');});}
 {const sm=lsGet('moleLabMode'),st=lsGet('moleLabTab');if(sm&&sm!==S.mode&&MODES.some(m=>m[0]===sm))setMode(sm);if(st&&TABS.some(t=>t[0]===st)&&st!==S.tab){S.tab=st;renderAll();}}
 
 (function(){
   const root=document.documentElement,b=document.getElementById('themeBtn');
-  const set=(m)=>{if(m==='light')root.setAttribute('data-theme','light');else root.removeAttribute('data-theme');b.textContent=m==='light'?'Dark mode':'Light mode';try{localStorage.setItem('mole-theme',m);}catch(e){}};
+  const set=(m)=>{root.setAttribute('data-theme',m==='light'?'light':'dark');b.textContent=m==='light'?'\u263e Dark mode':'\u2600 Light mode';b.setAttribute('aria-label',m==='light'?'Switch to dark theme':'Switch to light theme');try{localStorage.setItem('mole-theme',m);}catch(e){}};
   set(root.getAttribute('data-theme')==='light'?'light':'dark');
   b.addEventListener('click',()=>set(root.getAttribute('data-theme')==='light'?'dark':'light'));
 })();
